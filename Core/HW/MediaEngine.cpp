@@ -388,7 +388,7 @@ bool MediaEngine::reloadStream()
 int MediaEngine::addStreamData(const u8 *buffer, int addSize) {
 	int size = addSize;
 	if (size > 0 && m_pdata) {
-		if (!m_pdata->push(buffer, size)) 
+		if (!m_pdata->push(buffer, size))
 			size  = 0;
 		if (m_demux) {
 			m_demux->addStreamData(buffer, addSize);
@@ -455,7 +455,7 @@ bool MediaEngine::setVideoStream(int streamNum, bool force) {
 			return false;
 		}
 		AVCodecContext *m_pCodecCtx = m_pFormatCtx->streams[streamNum]->codec;
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57,33,100)
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57,33,100)
 		AVCodecParameters *m_pCodecPar = m_pFormatCtx->streams[streamNum]->codecpar;
 
 		// Update from deprecated public codec context

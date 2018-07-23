@@ -1792,6 +1792,8 @@ target_link_libraries(${CoreLibName} Common native kirk cityhash sfmt19937 xbrz 
 
 if(FFmpeg_FOUND)
 	target_compile_definitions(${CoreLibName} PRIVATE USE_FFMPEG=1)
+	target_include_directories(${CoreLibName} BEFORE PRIVATE
+		${FFmpeg_INCLUDE_avcodec})
 	target_link_libraries(${CoreLibName}
 		FFmpeg::avcodec
 		FFmpeg::avformat
