@@ -452,7 +452,7 @@ bool MediaEngine::addVideoStream(int streamNum, int streamId) {
 int MediaEngine::addStreamData(const u8 *buffer, int addSize) {
 	int size = addSize;
 	if (size > 0 && m_pdata) {
-		if (!m_pdata->push(buffer, size)) 
+		if (!m_pdata->push(buffer, size))
 			size  = 0;
 		if (m_demux) {
 			m_demux->addStreamData(buffer, addSize);
