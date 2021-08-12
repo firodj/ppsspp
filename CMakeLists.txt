@@ -139,6 +139,7 @@ option(USE_MINIUPNPC "Build with miniUPnPc support" ON)
 option(USE_SYSTEM_SNAPPY "Dynamically link against system snappy" ${USE_SYSTEM_SNAPPY})
 option(USE_SYSTEM_FFMPEG "Dynamically link against system FFMPEG" ${USE_SYSTEM_FFMPEG})
 option(USE_SYSTEM_LIBZIP "Dynamically link against system libzip" ${USE_SYSTEM_LIBZIP})
+option(USE_SYSTEM_PNG "Dynamically link against system libpng" ${USE_SYSTEM_PNG})
 option(USE_ASAN "Use address sanitizer" OFF)
 option(USE_UBSAN "Use undefined behaviour sanitizer" OFF)
 
@@ -188,7 +189,7 @@ else()
 	set(CoreLinkType STATIC)
 endif()
 
-# Work around for some misfeature of the current glslang build system 
+# Work around for some misfeature of the current glslang build system
 include_directories(ext/glslang)
 
 # Not sure if this is the best way - what about system glew?
@@ -959,7 +960,10 @@ else()
 	set(PNG_REQUIRED_VERSION 1.6)
 endif()
 
-find_package(PNG ${PNG_REQUIRED_VERSION})
+if(USE_SYSTEM_PNG)
+	find_package(PNG ${PNG_REQUIRED_VERSION})
+endif(USE_SYSTEM_PNG)
+
 if(PNG_FOUND)
 	include_directories(${PNG_INCLUDE_DIRS})
 else()
@@ -1151,7 +1155,6 @@ endif()
 if(TARGET SDL2::SDL2 AND NOT IOS)
 	target_link_libraries(Common SDL2::SDL2)
 endif()
-
 
 list(APPEND NativeAppSource
 	android/jni/TestRunner.cpp
@@ -1986,6 +1989,8 @@ target_link_libraries(${CoreLibName} Common native kirk cityhash sfmt19937 xbrz 
 
 if(FFmpeg_FOUND)
 	target_compile_definitions(${CoreLibName} PRIVATE USE_FFMPEG=1)
+	set_target_properties(${CoreLibName} PROPERTIES NO_SYSTEM_FROM_IMPORTED true)
+	target_include_directories(${CoreLibName} BEFORE PUBLIC ${FFmpeg_INCLUDE_avcodec})
 	target_link_libraries(${CoreLibName}
 		FFmpeg::avcodec
 		FFmpeg::avformat
@@ -2012,7 +2017,7 @@ if(USE_MINIUPNPC)
 	if (NO_GETADDRINFO)
 	  add_definitions(-DNO_GETADDRINFO)
 	endif()
-	
+
 	if (NOT WIN32)
 	  add_definitions (-DMINIUPNPC_SET_SOCKET_TIMEOUT)
 	  add_definitions (-D_BSD_SOURCE -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=200112L)
@@ -2025,7 +2030,7 @@ if(USE_MINIUPNPC)
 	else()
 		add_definitions(-fPIC)
 	endif()
-	
+
 	add_definitions(-DWITH_UPNP -DMINIUPNP_STATICLIB)
 	set(MINIUPNP_DIR "ext/miniupnp/miniupnpc")
 	include_directories(${CMAKE_CURRENT_BINARY_DIR})
