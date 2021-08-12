@@ -136,7 +136,7 @@ namespace MIPSDis
 		u32 callno = (op>>6) & 0xFFFFF; //20 bits
 		int funcnum = callno & 0xFFF;
 		int modulenum = (callno & 0xFF000) >> 12;
-		sprintf(out, "syscall\t	%s",/*PSPHLE::GetModuleName(modulenum),*/GetFuncName(modulenum, funcnum));
+		sprintf(out, "syscall\t%s",/*PSPHLE::GetModuleName(modulenum),*/GetFuncName(modulenum, funcnum));
 	}
 
 	void Dis_ToHiloTransfer(MIPSOpcode op, char *out)

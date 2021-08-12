@@ -21,6 +21,7 @@
 #include "Common/Profiler/Profiler.h"
 
 #include "Common/Log.h"
+#include "Common/Thread/ThreadUtil.h"
 #include "Common/File/FileUtil.h"
 #include "Common/GraphicsContext.h"
 #include "Common/Serialize/Serializer.h"
@@ -101,6 +102,7 @@ GPU_Vulkan::GPU_Vulkan(GraphicsContext *gfxCtx, Draw::DrawContext *draw)
 		shaderCacheLoaded_ = false;
 
 		std::thread th([&] {
+			SetCurrentThreadName("VkShaderCacheLoader");
 			LoadCache(shaderCachePath_);
 			shaderCacheLoaded_ = true;
 		});

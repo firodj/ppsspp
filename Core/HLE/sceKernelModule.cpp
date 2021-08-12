@@ -1143,6 +1143,106 @@ static int gzipDecompress(u8 *OutBuffer, int OutBufferLength, u8 *InBuffer) {
 	return stream.total_out;
 }
 
+void SoraDumpModule(PSPModule *module) {
+	const char* env_p;
+#ifdef WIN32
+	env_p = std::getenv("USERPROFILE");
+#else
+	env_p = std::getenv("HOME");
+#endif
+	Path path(env_p + std::string("/Sora/Sora.yaml"));
+	FILE *f = File::OpenCFile(path, "wb");
+	if (!f) {
+		ERROR_LOG(SCEMODULE, "Unable to write SoreDumpModule.");
+		return;
+	}
+	fprintf(f, "module:\n");
+	fprintf(f, "  nm:\n");
+	fprintf(f, "    next: 0x%x\n",          module->nm.next);
+	fprintf(f, "    attribute: 0x%x\n",     module->nm.attribute);
+	fprintf(f, "    version: %02x.%02x\n",  module->nm.version[0], module->nm.version[1]);
+	fprintf(f, "    name: %s\n",            module->nm.name);
+	fprintf(f, "    status: 0x%x\n",        module->nm.status);
+	fprintf(f, "    unk1: 0x%x\n",          module->nm.unk1);
+	fprintf(f, "    usermod_thid: 0x%x\n",  module->nm.usermod_thid);
+	fprintf(f, "    memid: 0x%x\n",         module->nm.memid);
+	fprintf(f, "    mpidtext: 0x%x\n",      module->nm.mpidtext);
+	fprintf(f, "    mpiddata: 0x%x\n",      module->nm.mpiddata);
+	fprintf(f, "    ent_top: 0x%x\n",       module->nm.ent_top);
+	fprintf(f, "    ent_size: 0x%x\n",      module->nm.ent_size);
+	fprintf(f, "    stub_top: 0x%x\n",      module->nm.stub_top);
+	fprintf(f, "    stub_size: 0x%x\n",     module->nm.stub_size);
+	fprintf(f, "    module_start_func: 0x%x\n",         module->nm.module_start_func);
+	fprintf(f, "    module_stop_func: 0x%x\n",          module->nm.module_stop_func);
+	fprintf(f, "    module_bootstart_func: 0x%x\n",     module->nm.module_bootstart_func);
+	fprintf(f, "    module_reboot_before_func: 0x%x\n", module->nm.module_reboot_before_func);
+	fprintf(f, "    module_reboot_phase_func: 0x%x\n",  module->nm.module_reboot_phase_func);
+	fprintf(f, "    entry_addr: 0x%x\n",    module->nm.entry_addr);
+	fprintf(f, "    gp_value: 0x%x\n",      module->nm.gp_value);
+	fprintf(f, "    text_addr: 0x%x\n",     module->nm.text_addr);
+	fprintf(f, "    text_size: 0x%x\n",     module->nm.text_size);
+	fprintf(f, "    data_size: 0x%x\n",     module->nm.data_size);
+	fprintf(f, "    bss_size: 0x%x\n",      module->nm.bss_size);
+	fprintf(f, "    nsegment: 0x%x\n",      module->nm.nsegment);
+
+    fprintf(f, "    segments:\n");
+	for (int i=0; i<4; i++) {
+		fprintf(f, "      - addr: 0x%x\n", module->nm.segmentaddr[i]);
+		fprintf(f, "        size: 0x%x\n", module->nm.segmentsize[i]);
+	}
+
+	fprintf(f, "    module_start_thread_priority: 0x%x\n",     module->nm.module_start_thread_priority);
+	fprintf(f, "    module_start_thread_stacksize: 0x%x\n",     module->nm.module_start_thread_stacksize);
+	fprintf(f, "    module_start_thread_attr: 0x%x\n",     module->nm.module_start_thread_attr);
+
+	fprintf(f, "    module_stop_thread_priority: 0x%x\n",     module->nm.module_stop_thread_priority);
+	fprintf(f, "    module_stop_thread_stacksize: 0x%x\n",     module->nm.module_stop_thread_stacksize);
+	fprintf(f, "    module_stop_thread_attr: 0x%x\n",     module->nm.module_stop_thread_attr);
+
+	fprintf(f, "    module_reboot_before_thread_priority: 0x%x\n",     module->nm.module_reboot_before_thread_priority);
+	fprintf(f, "    module_reboot_before_thread_stacksize: 0x%x\n",     module->nm.module_reboot_before_thread_stacksize);
+	fprintf(f, "    module_reboot_before_thread_attr: 0x%x\n",     module->nm.module_reboot_before_thread_attr);
+
+	fprintf(f, "  textStart: 0x%x\n", module->textStart);
+	fprintf(f, "  textEnd: 0x%x\n", module->textEnd);
+
+	fprintf(f, "  libstub: 0x%x\n", module->libstub);
+	fprintf(f, "  libstubend: 0x%x\n", module->libstubend);
+
+	fprintf(f, "  memoryBlockAddr: 0x%x\n", module->memoryBlockAddr);
+	fprintf(f, "  memoryBlockSize: 0x%x\n", module->memoryBlockSize);
+	fprintf(f, "  modulePtr: 0x%x\n", module->modulePtr);
+	fprintf(f, "  isFake: %s\n", module->isFake ? "yes" : "no");
+
+	auto modules = g_symbolMap->getAllModules();
+
+	fprintf(f, "modules:\n");
+
+	for (auto m : modules) {
+		fprintf(f, "  - name: %s\n", m.name.c_str());
+		fprintf(f, "    address: 0x%x\n", m.address);
+		fprintf(f, "    size: 0x%x\n", m.size);
+		fprintf(f, "    isActive: %s\n", m.active ? "yes" : "no");
+	}
+
+	auto functions = g_symbolMap->GetAllSymbols(ST_FUNCTION);
+
+	fprintf(f, "functions:\n");
+	for (auto fn : functions) {
+		fprintf(f, "  - name: %s\n", fn.name.c_str());
+		fprintf(f, "    address: 0x%x\n", fn.address);
+		fprintf(f, "    size: 0x%x\n", fn.size);
+	}
+
+    fprintf(f, "memory:\n");
+    fprintf(f, "  start: 0x%x\n", PSP_GetKernelMemoryBase());
+    fprintf(f, "  size: 0x%x\n", Memory::g_MemorySize);
+
+	fclose(f);
+
+	INFO_LOG(SCEMODULE, "Done write SoreDumpModule into: %s", path.c_str());
+}
+
 static PSPModule *__KernelLoadELFFromPtr(const u8 *ptr, size_t elfSize, u32 loadAddress, bool fromTop, std::string *error_string, u32 *magic, u32 &error) {
 	PSPModule *module = new PSPModule();
 	kernelObjects.Create(module);
@@ -1436,7 +1536,7 @@ static PSPModule *__KernelLoadELFFromPtr(const u8 *ptr, size_t elfSize, u32 load
 		if (scan) {
 			MIPSAnalyst::FinalizeScan(insertSymbols);
 		}
-	}
+  }
 
 	// Look at the exports, too.
 
@@ -1592,10 +1692,12 @@ static PSPModule *__KernelLoadELFFromPtr(const u8 *ptr, size_t elfSize, u32 load
 
 	if (!module->isFake) {
 		module->nm.entry_addr = reader.GetEntryPoint();
-	
+
 		// use module_start_func instead of entry_addr if entry_addr is 0
 		if (module->nm.entry_addr == 0)
 			module->nm.entry_addr = module->nm.module_start_func;
+
+		g_symbolMap->SetLabelName("start", module->nm.entry_addr);
 
 		MIPSAnalyst::PrecompileFunctions();
 
@@ -1629,8 +1731,15 @@ static PSPModule *__KernelLoadELFFromPtr(const u8 *ptr, size_t elfSize, u32 load
 	}
 
 	error = 0;
+
+	SoraDumpModule(module);
+	SoraDumpHLE();
+	Memory::SoraDumpMemory();
+
 	return module;
 }
+
+
 
 SceUID KernelLoadModule(const std::string &filename, std::string *error_string) {
 	PSPFileInfo info = pspFileSystem.GetFileInfo(filename);
@@ -2302,7 +2411,7 @@ u32 hleKernelStopUnloadSelfModuleWithOrWithoutStatus(u32 exitCode, u32 argSize, 
 				ERROR_LOG(SCEMODULE, "sceKernelStopUnloadSelfModuleWithStatus(%08x, %08x, %08x, %08x, %08x): invalid module id", exitCode, argSize, argp, statusAddr, optionAddr);
 			else
 				ERROR_LOG(SCEMODULE, "sceKernelSelfStopUnloadModule(%08x, %08x, %08x): invalid module id", exitCode, argSize, argp);
-			
+
 			return error;
 		}
 
@@ -2647,7 +2756,7 @@ static u32 sceKernelQueryModuleInfo(u32 uid, u32 infoAddr)
 static u32 sceKernelGetModuleIdList(u32 resultBuffer, u32 resultBufferSize, u32 idCountAddr)
 {
 	ERROR_LOG(SCEMODULE, "UNTESTED sceKernelGetModuleIdList(%08x, %i, %08x)", resultBuffer, resultBufferSize, idCountAddr);
-	
+
 	int idCount = 0;
 	u32 resultBufferOffset = 0;
 
@@ -2664,7 +2773,7 @@ static u32 sceKernelGetModuleIdList(u32 resultBuffer, u32 resultBufferSize, u32 
 	}
 
 	Memory::Write_U32(idCount, idCountAddr);
-	
+
 	return 0;
 }
 
@@ -2673,7 +2782,7 @@ static u32 sceKernelLoadModuleForLoadExecVSHDisc(const char *name, u32 flags, u3
 	return sceKernelLoadModule(name, flags, optionAddr);
 }
 
-const HLEFunction ModuleMgrForUser[] = 
+const HLEFunction ModuleMgrForUser[] =
 {
 	{0X977DE386, &WrapU_CUU<sceKernelLoadModule>,                       "sceKernelLoadModule",                     'x', "sxx"    },
 	{0XB7F46618, &WrapU_UUU<sceKernelLoadModuleByID>,                   "sceKernelLoadModuleByID",                 'x', "xxx"    },
@@ -2701,8 +2810,8 @@ const HLEFunction ModuleMgrForKernel[] =
 	{0x50F0C1EC, &WrapV_UUUUU<sceKernelStartModule>,                    "sceKernelStartModule",                    'v', "xxxxx", HLE_NOT_IN_INTERRUPT | HLE_NOT_DISPATCH_SUSPENDED | HLE_KERNEL_SYSCALL },
 	{0x977DE386, &WrapU_CUU<sceKernelLoadModule>,                       "sceKernelLoadModule",                     'x', "sxx",   HLE_KERNEL_SYSCALL },
 	{0xA1A78C58, &WrapU_CUU<sceKernelLoadModuleForLoadExecVSHDisc>,     "sceKernelLoadModuleForLoadExecVSHDisc",   'x', "sxx",   HLE_KERNEL_SYSCALL }, //fix for tiger x dragon
-	{0xCC1D3699, &WrapU_UUU<sceKernelSelfStopUnloadModule>,             "sceKernelSelfStopUnloadModule",           'x', "xxx",   HLE_KERNEL_SYSCALL }, // used  in Dissidia final fantasy chinese patch	
-	{0XD1FF982A, &WrapU_UUUUU<sceKernelStopModule>,                     "sceKernelStopModule",                     'x', "xxxxx", HLE_KERNEL_SYSCALL | HLE_NOT_IN_INTERRUPT | HLE_NOT_DISPATCH_SUSPENDED }, // used  in Dissidia final fantasy chinese patch	
+	{0xCC1D3699, &WrapU_UUU<sceKernelSelfStopUnloadModule>,             "sceKernelSelfStopUnloadModule",           'x', "xxx",   HLE_KERNEL_SYSCALL }, // used  in Dissidia final fantasy chinese patch
+	{0XD1FF982A, &WrapU_UUUUU<sceKernelStopModule>,                     "sceKernelStopModule",                     'x', "xxxxx", HLE_KERNEL_SYSCALL | HLE_NOT_IN_INTERRUPT | HLE_NOT_DISPATCH_SUSPENDED }, // used  in Dissidia final fantasy chinese patch
 	{0x748CBED9, &WrapU_UU<sceKernelQueryModuleInfo>,                   "sceKernelQueryModuleInfo",                'x', "xx",    HLE_KERNEL_SYSCALL },
 	{0x644395E2, &WrapU_UUU<sceKernelGetModuleIdList>,                  "sceKernelGetModuleIdList",                'x', "xxx",   HLE_KERNEL_SYSCALL },
 	{0X2E0911AA, &WrapU_U<sceKernelUnloadModule>,                       "sceKernelUnloadModule",                   'x', "x" ,    HLE_KERNEL_SYSCALL },
@@ -2715,6 +2824,6 @@ void Register_ModuleMgrForUser()
 
 void Register_ModuleMgrForKernel()
 {
-	RegisterModule("ModuleMgrForKernel", ARRAY_SIZE(ModuleMgrForKernel), ModuleMgrForKernel);		
+	RegisterModule("ModuleMgrForKernel", ARRAY_SIZE(ModuleMgrForKernel), ModuleMgrForKernel);
 
 };

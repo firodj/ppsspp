@@ -66,7 +66,6 @@ bool ElfReader::LoadRelocations(const Elf32_Rel *rels, int numRelocs) {
 	DEBUG_LOG(LOADER, "Loading %i relocations...", numRelocs);
 	std::atomic<int> numErrors;
 	numErrors.store(0);
-
 	ParallelRangeLoop(&g_threadManager, [&](int l, int h) {
 		for (int r = l; r < h; r++) {
 			u32 info = rels[r].r_info;
@@ -122,8 +121,8 @@ bool ElfReader::LoadRelocations(const Elf32_Rel *rels, int numRelocs) {
 
 			u32 op = relocOps[r];
 
-			const bool log = false;
-			//log=true;
+			const bool log = true;
+
 			if (log) {
 				DEBUG_LOG(LOADER, "rel at: %08x  info: %08x   type: %i", addr, info, type);
 			}
@@ -132,7 +131,7 @@ bool ElfReader::LoadRelocations(const Elf32_Rel *rels, int numRelocs) {
 			switch (type) {
 			case R_MIPS_32:
 				if (log)
-					DEBUG_LOG(LOADER, "Full address reloc %08x", addr);
+					DEBUG_LOG(LOADER, "%08x: Full address reloc %08x", addr, relocateTo);
 				//full address, no problemo
 				op += relocateTo;
 				break;
@@ -140,15 +139,12 @@ bool ElfReader::LoadRelocations(const Elf32_Rel *rels, int numRelocs) {
 			case R_MIPS_26: //j, jal
 				//add on to put in correct address space
 				if (log)
-					DEBUG_LOG(LOADER, "j/jal reloc %08x", addr);
+					DEBUG_LOG(LOADER, "%08x: j/jal reloc %08x", addr, relocateTo);
 				op = (op & 0xFC000000) | (((op & 0x03FFFFFF) + (relocateTo >> 2)) & 0x03FFFFFF);
 				break;
 
 			case R_MIPS_HI16: //lui part of lui-addiu pairs
 			{
-				if (log)
-					DEBUG_LOG(LOADER, "HI reloc %08x", addr);
-
 				u32 cur = (op & 0xFFFF) << 16;
 				u16 hi = 0;
 				bool found = false;
@@ -173,6 +169,11 @@ bool ElfReader::LoadRelocations(const Elf32_Rel *rels, int numRelocs) {
 				if (!found) {
 					ERROR_LOG_REPORT(LOADER, "R_MIPS_HI16: could not find R_MIPS_LO16");
 				}
+				else {
+					if (log)
+						DEBUG_LOG(LOADER, "%08x: HI reloc %08x", addr, relocateTo);
+				}
+
 				op = (op & 0xFFFF0000) | hi;
 			}
 			break;
@@ -180,7 +181,8 @@ bool ElfReader::LoadRelocations(const Elf32_Rel *rels, int numRelocs) {
 			case R_MIPS_LO16: //addiu part of lui-addiu pairs
 			{
 				if (log)
-					DEBUG_LOG(LOADER, "LO reloc %08x", addr);
+					DEBUG_LOG(LOADER, "%08x: LO reloc %08x", addr, relocateTo);
+
 				u32 cur = op & 0xFFFF;
 				cur += relocateTo;
 				cur &= 0xFFFF;
@@ -534,7 +536,7 @@ int ElfReader::LoadInto(u32 loadAddress, bool fromTop)
 		}
 	}
 
-	DEBUG_LOG(LOADER,"Relocations:");
+	DEBUG_LOG(LOADER, "Relocations:");
 
 	// Second pass: Do necessary relocations
 	for (int i = 0; i < GetNumSections(); i++)
@@ -561,7 +563,7 @@ int ElfReader::LoadInto(u32 loadAddress, bool fromTop)
 				DEBUG_LOG(LOADER,"%s: Performing %i relocations on %s : offset = %08x", name, numRelocs, GetSectionName(sectionToModify), sections[i].sh_offset);
 				if (!LoadRelocations(rels, numRelocs)) {
 					WARN_LOG(LOADER, "LoadInto: Relocs failed, trying anyway");
-				}			
+				}
 			}
 			else
 			{
@@ -700,7 +702,7 @@ bool ElfReader::LoadSymbols()
 		Elf32_Sym *symtab = (Elf32_Sym *)(GetSectionDataPtr(sec));
 
 		int numSymbols = sections[sec].sh_size / sizeof(Elf32_Sym);
-		
+
 		for (int sym = 0; sym<numSymbols; sym++)
 		{
 			int size = symtab[sym].st_size;

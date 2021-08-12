@@ -1,0 +1,15 @@
+8804114:
+	addiu	sp, sp, -0x20
+	lui	v0, 0x308
+	sw	s3, 0xC(sp)
+	move	s3, a0
+	ori	a0, v0, 0x10
+	sw	s2, 0x8(sp)
+	move	s2, a1
+	sw	s1, 0x4(sp)
+	sw	s0, 0x0(sp)
+	lui	s0, 0x0
+	sw	ra, 0x10(sp)
+	jal	->$08a38a70
+	addiu	s1, s0, 0x0
+---

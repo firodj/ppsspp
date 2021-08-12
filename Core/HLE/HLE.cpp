@@ -24,6 +24,7 @@
 
 #include "Common/Log.h"
 #include "Common/Serialize/SerializeFuncs.h"
+#include "Common/File/FileUtil.h"
 #include "Common/TimeUtil.h"
 #include "Core/Config.h"
 #include "Core/Core.h"
@@ -510,6 +511,7 @@ void HLEReturnFromMipsCall() {
 
 	if (stackData->nextOff == 0xFFFFFFFF) {
 		// We're done.  Grab the HLE result's v0/v1 and return from the syscall.
+
 		currentMIPS->pc = stackData->ra;
 		currentMIPS->r[MIPS_REG_V0] = stackData->v0;
 		currentMIPS->r[MIPS_REG_V1] = stackData->v1;
@@ -899,4 +901,37 @@ void hleDoLogInternal(LogTypes::LOG_TYPE t, LogTypes::LOG_LEVELS level, u64 res,
 			Reporting::ReportMessageFormatted(key.c_str(), formatted_message);
 		}
 	}
+}
+
+void SoraDumpHLE() {
+	const char* env_p;
+#ifdef WIN32
+	env_p = std::getenv("USERPROFILE");
+#else
+	env_p = std::getenv("HOME");
+#endif
+	Path path(env_p + std::string("/Sora/Sora.yaml"));
+	FILE* f = File::OpenCFile(path, "ab+");
+	if (!f) {
+		ERROR_LOG(SCEMODULE, "Unable to write SoreDumpModule.");
+		return;
+	}
+	fprintf(f, "hle_modules:\n");
+
+	for (int modulenum = 0; modulenum < moduleDB.size(); modulenum++) {
+		const auto &module = moduleDB[modulenum];
+		fprintf(f, "  - name: %s\n", module.name);
+		fprintf(f, "    funcs:\n");
+		for (int funcnum = 0; funcnum < module.numFunctions; funcnum++) {
+			auto func = module.funcTable[funcnum];
+			fprintf(f, "      - idx: %d:%d\n", modulenum, funcnum);
+			fprintf(f, "        nid: 0x%08x\n", func.ID);
+			fprintf(f, "        name: %s\n", func.name);
+			fprintf(f, "        argmask: %s\n", func.argmask);
+			fprintf(f, "        retmask: %c\n", func.retmask);
+			fprintf(f, "        flags: 0x%08x\n", func.flags);
+		}
+	}
+
+	fclose(f);
 }

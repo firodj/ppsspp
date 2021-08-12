@@ -90,17 +90,17 @@
 //sound
 //zlibdec
 const HLEFunction FakeSysCalls[] = {
-	{NID_THREADRETURN, __KernelReturnFromThread, "__KernelReturnFromThread", 'x', ""},
-	{NID_CALLBACKRETURN, __KernelReturnFromMipsCall, "__KernelReturnFromMipsCall", 'x', ""},
-	{NID_INTERRUPTRETURN, __KernelReturnFromInterrupt, "__KernelReturnFromInterrupt", 'x', ""},
-	{NID_EXTENDRETURN, __KernelReturnFromExtendStack, "__KernelReturnFromExtendStack", 'x', ""},
-	{NID_MODULERETURN, __KernelReturnFromModuleFunc, "__KernelReturnFromModuleFunc", 'x', ""},
-	{NID_IDLE, __KernelIdle, "_sceKernelIdle", 'x', ""},
-	{NID_GPUREPLAY, __KernelGPUReplay, "__KernelGPUReplay", 'x', ""},
-	{NID_HLECALLRETURN, HLEReturnFromMipsCall, "HLEReturnFromMipsCall", 'x', ""},
+	{NID_THREADRETURN,    __KernelReturnFromThread,      "__KernelReturnFromThread",      'x', ""},
+	{NID_CALLBACKRETURN,  __KernelReturnFromMipsCall,    "__KernelReturnFromMipsCall",    'x', ""},
+	{NID_INTERRUPTRETURN, __KernelReturnFromInterrupt,   "__KernelReturnFromInterrupt",   'x', ""},
+	{NID_EXTENDRETURN,    __KernelReturnFromExtendStack, "__KernelReturnFromExtendStack", 'x', ""},
+	{NID_MODULERETURN,    __KernelReturnFromModuleFunc,  "__KernelReturnFromModuleFunc",  'x', ""},
+	{NID_IDLE,            __KernelIdle,                  "_sceKernelIdle",                'x', ""},
+	{NID_GPUREPLAY,       __KernelGPUReplay,             "__KernelGPUReplay",             'x', ""},
+	{NID_HLECALLRETURN,   HLEReturnFromMipsCall,         "HLEReturnFromMipsCall",         'x', ""},
 };
 
-const HLEFunction UtilsForUser[] = 
+const HLEFunction UtilsForUser[] =
 {
 	{0X91E4F6A7, &WrapU_V<sceKernelLibcClock>,                       "sceKernelLibcClock",                      'x', ""   },
 	{0X27CC57F0, &WrapU_U<sceKernelLibcTime>,                        "sceKernelLibcTime",                       'x', "x"  },
@@ -128,9 +128,9 @@ const HLEFunction UtilsForUser[] =
 	{0X4FD31C9D, nullptr,                                            "sceKernelIcacheProbe",                    '?', ""   },
 	{0XFB05FAD0, nullptr,                                            "sceKernelIcacheReadTag",                  '?', ""   },
 	{0X920F104A, &WrapU_V<sceKernelIcacheInvalidateAll>,             "sceKernelIcacheInvalidateAll",            'x', ""   }
-};				   
+};
 
-const HLEFunction LoadCoreForKernel[] = 
+const HLEFunction LoadCoreForKernel[] =
 {
 	{0XACE23476, nullptr,                                            "sceKernelCheckPspConfig",                 '?', ""   },
 	{0X7BE1421C, nullptr,                                            "sceKernelCheckExecFile",                  '?', ""   },
@@ -166,7 +166,7 @@ const HLEFunction LoadCoreForKernel[] =
 };
 
 
-const HLEFunction KDebugForKernel[] = 
+const HLEFunction KDebugForKernel[] =
 {
 	{0XE7A3874D, nullptr,                                            "sceKernelRegisterAssertHandler",          '?', ""   },
 	{0X2FF4E9F9, nullptr,                                            "sceKernelAssert",                         '?', ""   },
@@ -190,13 +190,13 @@ const HLEFunction KDebugForKernel[] =
 	{0XB7251823, nullptr,                                            "sceKernelAcceptMbogoSig",                 '?', ""   },
 };
 
-const HLEFunction pspeDebug[] = 
+const HLEFunction pspeDebug[] =
 {
 	{0XDEADBEAF, nullptr,                                            "pspeDebugWrite",                          '?', ""   },
 };
 
 
-const HLEModule moduleList[] = 
+const HLEModule moduleList[] =
 {
 	{"FakeSysCalls", ARRAY_SIZE(FakeSysCalls), FakeSysCalls},
 	{"UtilsForUser", ARRAY_SIZE(UtilsForUser), UtilsForUser},

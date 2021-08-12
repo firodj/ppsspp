@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{ae79a557-906a-4b9b-b22d-d2920470157a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MIPS">
+      <UniqueIdentifier>{bb76a872-e38f-4a96-aeb7-982f6e1b01b7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ext\xxhash.c">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSAnalyst.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSAsm.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSCodeUtils.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSDebugInterface.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSDis.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSDisVFPU.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSInt.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSIntVFPU.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSTables.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSVFPUUtils.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPSStackWalk.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MIPS\MIPS.cpp">
+      <Filter>MIPS</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Yaml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\MemmapFunctions.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Core\Debugger\SymbolMap.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\ext\xxhash.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPS.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSAnalyst.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSAsm.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSCodeUtils.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSDebugInterface.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSDis.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSDisVFPU.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSInt.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSIntVFPU.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSTables.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSVFPUUtils.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Core\MIPS\MIPSStackWalk.h">
+      <Filter>MIPS</Filter>
+    </ClInclude>
+    <ClInclude Include="Yaml.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

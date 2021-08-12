@@ -36,6 +36,7 @@
 #include "Core/HLE/HLETables.h"
 #include "Core/HLE/ReplaceTables.h"
 #include "Core/System.h"
+#include "Core/BBTrace.h"
 
 #define R(i) (currentMIPS->r[i])
 #define F(i) (currentMIPS->f[i])
@@ -58,11 +59,17 @@
 static inline void DelayBranchTo(u32 where)
 {
 	if (!Memory::IsValidAddress(where) || (where & 3) != 0) {
+#ifndef BUILD_DISASM
 		Core_ExecException(where, PC, ExecExceptionType::JUMP);
+#endif
 	}
 	PC += 4;
 	mipsr4k.nextPC = where;
 	mipsr4k.inDelaySlot = true;
+#ifndef BUILD_DISASM
+	BBTrace *bbTrace = BBTrace::GetFromCurrentThread();
+	bbTrace->next_adj_bb(where);
+#endif
 }
 
 static inline void SkipLikely() {
@@ -76,6 +83,7 @@ static inline void SkipLikely() {
 	}
 }
 
+#ifndef BUILD_DISASM
 int MIPS_SingleStep()
 {
 	MIPSOpcode op = Memory::Read_Opcode_JIT(mipsr4k.pc);
@@ -90,6 +98,7 @@ int MIPS_SingleStep()
 	}
 	return 1;
 }
+#endif
 
 namespace MIPSInt
 {
@@ -109,11 +118,13 @@ namespace MIPSInt
 		switch (func) {
 		// Icache
 		case 8:
+#ifndef BUILD_DISASM
 			// Invalidate the instruction cache at this address.
 			// We assume the CPU won't be reset during this, so no locking.
 			if (MIPSComp::jit) {
 				MIPSComp::jit->InvalidateCacheAt(addr, 0x40);
 			}
+#endif
 			break;
 
 		// Dcache
@@ -139,7 +150,7 @@ namespace MIPSInt
 	void Int_Syscall(MIPSOpcode op)
 	{
 		// Need to pre-move PC, as CallSyscall may result in a rescheduling!
-		// To do this neater, we'll need a little generated kernel loop that syscall can jump to and then RFI from 
+		// To do this neater, we'll need a little generated kernel loop that syscall can jump to and then RFI from
 		// but I don't see a need to bother.
 		if (mipsr4k.inDelaySlot)
 		{
@@ -150,7 +161,9 @@ namespace MIPSInt
 			mipsr4k.pc += 4;
 		}
 		mipsr4k.inDelaySlot = false;
+#ifndef BUILD_DISASM
 		CallSyscall(op);
+#endif
 	}
 
 	void Int_Sync(MIPSOpcode op)
@@ -162,7 +175,9 @@ namespace MIPSInt
 	void Int_Break(MIPSOpcode op)
 	{
 		Reporting::ReportMessage("BREAK instruction hit");
+#ifndef BUILD_DISASM
 		Core_Break(PC);
+#endif
 		PC += 4;
 	}
 
@@ -173,7 +188,7 @@ namespace MIPSInt
 		int rt = _RT;
 		u32 addr = PC + imm + 4;
 
-		switch (op >> 26) 
+		switch (op >> 26)
 		{
 		case 4:  if (R(rt) == R(rs))  DelayBranchTo(addr); else PC += 4; break; //beq
 		case 5:  if (R(rt) != R(rs))  DelayBranchTo(addr); else PC += 4; break; //bne
@@ -247,7 +262,7 @@ namespace MIPSInt
 			break;
 		}
 	}
-	
+
 	void Int_JumpType(MIPSOpcode op)
 	{
 		if (mipsr4k.inDelaySlot)
@@ -256,7 +271,7 @@ namespace MIPSInt
 		u32 off = ((op & 0x03FFFFFF) << 2);
 		u32 addr = (currentMIPS->pc & 0xF0000000) | off;
 
-		switch (op>>26) 
+		switch (op>>26)
 		{
 		case 2: //j
 			if (!mipsr4k.inDelaySlot)
@@ -284,7 +299,7 @@ namespace MIPSInt
 		int rs = _RS;
 		int rd = _RD;
 		u32 addr = R(rs);
-		switch (op & 0x3f) 
+		switch (op & 0x3f)
 		{
 		case 8: //jr
 			if (!mipsr4k.inDelaySlot)
@@ -314,7 +329,7 @@ namespace MIPSInt
 			return; //nop
 		}
 
-		switch (op>>26) 
+		switch (op>>26)
 		{
 		case 8:	R(rt) = R(rs) + simm; break; //addi
 		case 9:	R(rt) = R(rs) + simm; break;	//addiu
@@ -377,7 +392,7 @@ namespace MIPSInt
 			return;
 		}
 
-		switch (op & 63) 
+		switch (op & 63)
 		{
 		case 10: if (R(rt) == 0) R(rd) = R(rs); break; //movz
 		case 11: if (R(rt) != 0) R(rd) = R(rs); break; //movn
@@ -414,7 +429,7 @@ namespace MIPSInt
 			return;
 		}
 
-		switch (op >> 26) 
+		switch (op >> 26)
 		{
 		case 32: R(rt) = SignExtend8ToU32(Memory::Read_U8(addr)); break; //lb
 		case 33: R(rt) = SignExtend16ToU32(Memory::Read_U16(addr)); break; //lh
@@ -524,18 +539,20 @@ namespace MIPSInt
 				if (fs == 31) {
 					currentMIPS->fcr31 = value & 0x0181FFFF;
 					currentMIPS->fpcond = (value >> 23) & 1;
+#ifndef BUILD_DISASM
 					// Don't bother locking, assuming the CPU can't be reset now anyway.
 					if (MIPSComp::jit) {
 						// In case of DISABLE, we need to tell jit we updated FCR31.
 						MIPSComp::jit->UpdateFCR31();
 					}
+#endif
 				} else {
 					WARN_LOG_REPORT(CPU, "WriteFCR: Unexpected reg %d (value %08x)", fs, value);
 				}
 				DEBUG_LOG(CPU, "FCR%i written to, value %08x", fs, value);
 				break;
 			}
-		
+
 		default:
 			_dbg_assert_msg_(false,"Trying to interpret instruction that can't be interpreted");
 			break;
@@ -576,7 +593,7 @@ namespace MIPSInt
 		int rs = _RS;
 		int rd = _RD;
 
-		switch (op & 63) 
+		switch (op & 63)
 		{
 		case 24: //mult
 			{
@@ -688,16 +705,16 @@ namespace MIPSInt
 			PC += 4;
 			return;
 		}
-		
+
 		switch (op & 0x3f)
 		{
 		case 0: R(rd) = R(rt) << sa;					 break; //sll
-		case 2: 
+		case 2:
 			if (_RS == 0) //srl
 			{
 				R(rd) = R(rt) >> sa;
-				break; 
-			} 
+				break;
+			}
 			else if (_RS == 1) //rotr
 			{
 				R(rd) = __rotr(R(rt), sa);
@@ -712,7 +729,7 @@ namespace MIPSInt
 			if (_FD == 0) //srlv
 			{
 				R(rd) = R(rt) >> (R(rs)&0x1F);
-				break; 
+				break;
 			}
 			else if (_FD == 1) // rotrv
 			{
@@ -1022,7 +1039,11 @@ namespace MIPSInt
 		}
 		// It's a replacement func!
 		int index = op.encoding & 0xFFFFFF;
+#ifndef BUILD_DISASM
 		const ReplacementTableEntry *entry = GetReplacementFunc(index);
+#else
+		const ReplacementTableEntry* entry = nullptr;
+#endif
 		if (entry && entry->replaceFunc && (entry->flags & REPFLAG_DISABLED) == 0) {
 			entry->replaceFunc();
 

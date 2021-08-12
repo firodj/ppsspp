@@ -123,7 +123,7 @@ namespace MIPSComp {
 }
 
 void MIPSCompileOp(MIPSOpcode op, MIPSComp::MIPSFrontendInterface *jit);
-void MIPSDisAsm(MIPSOpcode op, u32 pc, char *out, bool tabsToSpaces = false);
+void MIPSDisAsm(MIPSOpcode op, u32 pc, char *out, bool tabsToSpaces = false, std::string *logs = nullptr);
 MIPSInfo MIPSGetInfo(MIPSOpcode op);
 void MIPSInterpret(MIPSOpcode op); //only for those rare ones
 int MIPSInterpret_RunUntil(u64 globalTicks);

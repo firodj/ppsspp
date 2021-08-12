@@ -430,7 +430,7 @@ namespace MIPSInt
 			_dbg_assert_msg_( 0, "Invalid Viim opcode type %d", type);
 			f[0] = 0;
 		}
-		
+
 		ApplyPrefixD(f, V_Single);
 		WriteVector(f, V_Single, vt);
 		PC += 4;
@@ -475,7 +475,11 @@ namespace MIPSInt
 		ReadMatrix(t, sz, vt);
 
 		// TODO: Always use the more accurate path in interpreter?
+#ifndef BUILD_DISASM
 		bool useAccurateDot = USE_VFPU_DOT || PSP_CoreParameter().compat.flags().MoreAccurateVMMUL;
+#else
+		bool useAccurateDot = USE_VFPU_DOT;
+#endif
 		for (int a = 0; a < n; a++) {
 			for (int b = 0; b < n; b++) {
 				union { float f; uint32_t u; } sum = { 0.0f };
@@ -628,7 +632,6 @@ namespace MIPSInt
 			case 5: if (s[i] < -1.0f) d[i] = -1.0f; else {if(s[i] > 1.0f) d[i] = 1.0f; else d[i] = s[i];} break;  // vsat1
 			case 16: d[i] = 1.0f / s[i]; break; //vrcp
 			case 17: d[i] = USE_VFPU_SQRT ? vfpu_rsqrt(s[i]) : 1.0f / sqrtf(s[i]); break; //vrsq
-				
 			case 18: { d[i] = vfpu_sin(s[i]); } break; //vsin
 			case 19: { d[i] = vfpu_cos(s[i]); } break; //vcos
 			case 20: d[i] = powf(2.0f, s[i]); break; //vexp2
@@ -702,7 +705,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_Vsocp(MIPSOpcode op) {
 		float s[4], t[4], d[4];
 		int vd = _VD;
@@ -849,7 +852,7 @@ namespace MIPSInt
 		VectorSize sz = GetVecSize(op);
 		ReadVector(reinterpret_cast<float *>(s), sz, vs);
 		ApplySwizzleS(reinterpret_cast<float *>(s), sz);
-		
+
 		VectorSize outsize = V_Pair;
 		switch (sz) {
 		case V_Single:
@@ -884,7 +887,7 @@ namespace MIPSInt
 		ApplySwizzleS(s, V_Quad);
 		// Negate should not actually apply to invalid swizzle.
 		RetainInvalidSwizzleST(s, V_Quad);
-		
+
 		VectorSize outsize = V_Single;
 		switch (sz) {
 		case V_Single:
@@ -920,9 +923,9 @@ namespace MIPSInt
 
 		// TODO: Similar to colorconv, invalid swizzle seems to reuse last output.
 		switch ((op >> 16) & 3) {
-		case 0:  // vuc2i  
+		case 0:  // vuc2i
 			// Quad is the only option.
-			// This operation is weird. This particular way of working matches hw but does not 
+			// This operation is weird. This particular way of working matches hw but does not
 			// seem quite sane.
 			// I guess it's used for fixed-point math, and fills more bits to facilitate
 			// conversion between 8-bit and 16-bit values.  But then why not do it in vc2i?
@@ -1132,7 +1135,7 @@ namespace MIPSInt
 					int b = ((in >> 16) & 0xFF) >> 3;
 					int g = ((in >> 8) & 0xFF) >> 2;
 					int r = ((in) & 0xFF) >> 3;
-					col = (b << 11) | (g << 5) | (r); 
+					col = (b << 11) | (g << 5) | (r);
 					break;
 				}
 			}
@@ -1273,7 +1276,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_Vsrt1(MIPSOpcode op) {
 		float s[4], t[4], d[4];
 		int vd = _VD;
@@ -1377,7 +1380,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_Vcrs(MIPSOpcode op) {
 		//half a cross product
 		float s[4]{}, t[4]{}, d[4];
@@ -1408,7 +1411,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_Vdet(MIPSOpcode op) {
 		float s[4]{}, t[4]{}, d[4];
 		int vd = _VD;
@@ -1440,7 +1443,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_Vfad(MIPSOpcode op) {
 		float s[4]{}, t[4]{};
 		float d;
@@ -1711,7 +1714,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
- 
+
 	void Int_SV(MIPSOpcode op)
 	{
 		s32 imm = (signed short)(op&0xFFFC);
@@ -1935,7 +1938,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_Vscmp(MIPSOpcode op) {
 		FloatBits s, t, d;
 		int vt = _VT;
@@ -2128,7 +2131,7 @@ namespace MIPSInt
 		PC += 4;
 		EatPrefixes();
 	}
-	
+
 	void Int_CrossQuat(MIPSOpcode op) {
 		float s[4]{}, t[4]{}, d[4];
 		int vd = _VD;
