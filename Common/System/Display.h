@@ -9,6 +9,8 @@ extern int dp_xres;
 extern int dp_yres;
 extern int pixel_xres;
 extern int pixel_yres;
+extern int retina_x;
+extern int retina_y;
 
 extern float g_dpi;
 extern float g_dpi_scale_x;

@@ -819,7 +819,7 @@ int main(int argc, char *argv[]) {
 					bool fullscreen = (window_flags & SDL_WINDOW_FULLSCREEN);
 
 					// This one calls NativeResized if the size changed.
-					UpdateScreenScale(new_width, new_height);
+					UpdateScreenScale(new_width * retina_x, new_height * retina_y);
 
 					// Set variable here in case fullscreen was toggled by hotkey
 					g_Config.bFullScreen = fullscreen;
@@ -946,8 +946,8 @@ int main(int argc, char *argv[]) {
 					{
 						mouseDown = true;
 						TouchInput input;
-						input.x = mx;
-						input.y = my;
+						input.x = mx * retina_x;
+						input.y = my * retina_y;
 						input.flags = TOUCH_DOWN | TOUCH_MOUSE;
 						input.id = 0;
 						NativeTouch(input);
@@ -999,8 +999,8 @@ int main(int argc, char *argv[]) {
 			case SDL_MOUSEMOTION:
 				if (mouseDown) {
 					TouchInput input;
-					input.x = mx;
-					input.y = my;
+					input.x = mx * retina_x;
+					input.y = my * retina_y;
 					input.flags = TOUCH_MOVE | TOUCH_MOUSE;
 					input.id = 0;
 					NativeTouch(input);
@@ -1014,8 +1014,8 @@ int main(int argc, char *argv[]) {
 					{
 						mouseDown = false;
 						TouchInput input;
-						input.x = mx;
-						input.y = my;
+						input.x = mx * retina_x;
+						input.y = my * retina_y;
 						input.flags = TOUCH_UP | TOUCH_MOUSE;
 						input.id = 0;
 						NativeTouch(input);

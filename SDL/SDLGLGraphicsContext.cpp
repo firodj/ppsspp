@@ -317,6 +317,8 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 	// We start hidden because we have to try several windows.
 	// On Mac, full screen animates so each attempt is slow.
 	mode |= SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN;
+	mode |= SDL_WINDOW_ALLOW_HIGHDPI;
+	mode &= ~SDL_WINDOW_FULLSCREEN;
 
 	SDL_GLContext glContext = nullptr;
 	for (size_t i = 0; i < ARRAY_SIZE(attemptVersions); ++i) {
@@ -344,6 +346,13 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 		glContext = SDL_GL_CreateContext(window);
 		if (glContext != nullptr) {
 			// Victory, got one.
+			int testw = 0;
+			int testh = 0;
+			SDL_GL_GetDrawableSize(window, &testw, &testh);
+			retina_x = testw / pixel_xres;
+			retina_y = testh / pixel_yres;
+			printf("DrawableSize(%d, %d)\n", testw, testh);
+
 			break;
 		}
 
@@ -352,13 +361,17 @@ int SDLGLGraphicsContext::Init(SDL_Window *&window, int x, int y, int mode, std:
 		SDL_DestroyWindow(window);
 	}
 
+	if (retina_x > 1 || retina_y > 1) {
+			SDL_SetWindowSize(window, pixel_xres / retina_x, pixel_yres / retina_y);
+	}
+
 	if (glContext == nullptr) {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, 0);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 0);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		SetGLCoreContext(false);
 
-		window = SDL_CreateWindow("PPSSPP", x, y, pixel_xres, pixel_yres, mode);
+		window = SDL_CreateWindow("PPSSPP", x, y, pixel_xres / retina_x, pixel_yres / retina_y, mode);
 		if (window == nullptr) {
 			NativeShutdown();
 			fprintf(stderr, "SDL_CreateWindow failed: %s\n", SDL_GetError());

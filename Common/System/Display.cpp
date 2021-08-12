@@ -4,6 +4,9 @@
 int dp_xres;
 int dp_yres;
 
+int retina_x = 1;
+int retina_y = 1;
+
 int pixel_xres;
 int pixel_yres;
 

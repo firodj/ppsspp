@@ -36,3 +36,4 @@ else
 	plutil -replace CFBundleShortVersionString -string "" ${PPSSPP}/Contents/Info.plist
 	plutil -replace CFBundleVersion            -string "" ${PPSSPP}/Contents/Info.plist
 fi
+plutil -replace NSHighResolutionCapable -bool YES ${PPSSPP}/Contents/Info.plist
