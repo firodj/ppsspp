@@ -122,9 +122,13 @@ namespace MIPSDis
 
 	void Dis_Syscall(MIPSOpcode op, uint32_t pc, char *out, size_t outSize) {
 		u32 callno = (op>>6) & 0xFFFFF; //20 bits
+#ifdef BUILD_DISASM
+		snprintf(out, outSize, "syscall\t0x%05x", callno);
+#else
 		int funcnum = callno & 0xFFF;
 		int modulenum = (callno & 0xFF000) >> 12;
 		snprintf(out, outSize, "syscall\t	%s", GetFuncName(modulenum, funcnum));
+#endif
 	}
 
 	void Dis_ToHiloTransfer(MIPSOpcode op, uint32_t pc, char *out, size_t outSize) {

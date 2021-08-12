@@ -24,7 +24,6 @@
 #include <mutex>
 
 #include "ext/cityhash/city.h"
-#include "ext/xxhash.h"
 
 #include "Common/File/FileUtil.h"
 #include "Common/Log.h"
@@ -41,6 +40,7 @@
 #include "Core/Debugger/SymbolMap.h"
 #include "Core/Debugger/DebugInterface.h"
 #include "Core/HLE/ReplaceTables.h"
+#include "sora/sora.h"
 
 using namespace MIPSCodeUtils;
 
@@ -49,7 +49,7 @@ typedef std::vector<MIPSAnalyst::AnalyzedFunction> FunctionsVector;
 static FunctionsVector functions;
 std::recursive_mutex functions_lock;
 
-// One function can appear in multiple copies in memory, and they will all have 
+// One function can appear in multiple copies in memory, and they will all have
 // the same hash and should all be replaced if possible.
 static std::unordered_multimap<u64, MIPSAnalyst::AnalyzedFunction *> hashToFunction;
 
@@ -79,7 +79,9 @@ namespace std {
 
 static std::unordered_set<HashMapFunc> hashMap;
 
+#ifndef BUILD_DISASM
 static Path hashmapFileName;
+#endif
 
 #define MIPSTABLE_IMM_MASK 0xFC000000
 
@@ -739,7 +741,7 @@ namespace MIPSAnalyst {
 
 		return results;
 	}
-	
+
 	void Reset() {
 		std::lock_guard<std::recursive_mutex> guard(functions_lock);
 		functions.clear();
@@ -906,12 +908,15 @@ skip:
 
 	void PrecompileFunction(u32 startAddr, u32 length) {
 		// Direct calls to this ignore the bPreloadFunctions flag, since it's just for stubs.
+#ifndef BUILD_DISASM
 		std::lock_guard<std::recursive_mutex> guard(MIPSComp::jitLock);
 		if (MIPSComp::jit) {
 			MIPSComp::jit->CompileFunction(startAddr, length);
 		}
+#endif
 	}
 
+#ifndef BUILD_DISASM
 	void PrecompileFunctions() {
 		if (!g_Config.bPreloadFunctions) {
 			return;
@@ -930,6 +935,7 @@ skip:
 
 		NOTICE_LOG(JIT, "Precompiled %d MIPS functions in %0.2f milliseconds", (int)functions.size(), (et - st) * 1000.0);
 	}
+#endif
 
 	static const char *DefaultFunctionName(char buffer[256], u32 startAddr) {
 		snprintf(buffer, 256, "z_un_%08x", startAddr);
@@ -1176,6 +1182,7 @@ skip:
 		return insertSymbols;
 	}
 
+#ifndef BUILD_DISASM
 	void FinalizeScan(bool insertSymbols) {
 		HashFunctions();
 
@@ -1191,9 +1198,11 @@ skip:
 			}
 			if (g_Config.bFuncReplacements) {
 				ReplaceFunctions();
+				ReplaceSoraFunctions();
 			}
 		}
 	}
+#endif
 
 	bool SkipFuncHash(const std::string &name) {
 		std::vector<std::string> funcs;
@@ -1234,6 +1243,7 @@ skip:
 		HashFunctions();
 	}
 
+#ifndef BUILD_DISASM
 	void ForgetFunctions(u32 startAddr, u32 endAddr) {
 		std::lock_guard<std::recursive_mutex> guard(functions_lock);
 
@@ -1270,7 +1280,9 @@ skip:
 			UpdateHashToFunctionMap();
 		}
 	}
+#endif
 
+#ifndef BUILD_DISASM
 	void ReplaceFunctions() {
 		std::lock_guard<std::recursive_mutex> guard(functions_lock);
 
@@ -1278,6 +1290,7 @@ skip:
 			WriteReplaceInstructions(functions[i].start, functions[i].hash, functions[i].size);
 		}
 	}
+#endif
 
 	void UpdateHashMap() {
 		std::lock_guard<std::recursive_mutex> guard(functions_lock);
@@ -1309,6 +1322,7 @@ skip:
 		return 0;
 	}
 
+#ifndef BUILD_DISASM
 	void SetHashMapFilename(const std::string& filename) {
 		if (filename.empty())
 			hashmapFileName = GetSysDirectory(DIRECTORY_SYSTEM) / "knownfuncs.ini";
@@ -1342,6 +1356,7 @@ skip:
 		}
 		fclose(file);
 	}
+#endif
 
 	void ApplyHashMap() {
 		UpdateHashToFunctionMap();
@@ -1381,6 +1396,7 @@ skip:
 		}
 	}
 
+#ifndef BUILD_DISASM
 	void LoadHashMap(const Path &filename) {
 		FILE *file = File::OpenCFile(filename, "rt");
 		if (!file) {
@@ -1404,6 +1420,7 @@ skip:
 		}
 		fclose(file);
 	}
+#endif
 
 	std::vector<MIPSGPReg> GetInputRegs(MIPSOpcode op) {
 		std::vector<MIPSGPReg> vec;
@@ -1478,6 +1495,12 @@ skip:
 			} else {				// to immediate
 				info.branchTarget = GetJumpTarget(address);
 			}
+		}
+
+		// delay slot
+		if (opInfo & DELAYSLOT) {
+			// Let's just finish the delay slot before bailing.
+			info.hasDelaySlot = true;
 		}
 
 		// movn, movz

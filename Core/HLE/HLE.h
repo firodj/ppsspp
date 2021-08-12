@@ -157,6 +157,8 @@ void *GetQuickSyscallFunc(MIPSOpcode op);
 
 void hleDoLogInternal(LogType t, LogLevel level, u64 res, const char *file, int line, const char *reportTag, char retmask, const char *reason, const char *formatted_reason);
 
+void SoraDumpHLE();
+
 template <typename T>
 T hleDoLog(LogType t, LogLevel level, T res, const char *file, int line, const char *reportTag, char retmask, const char *reason, ...) {
 	if ((int)level > MAX_LOGLEVEL || !GenericLogEnabled(level, t)) {

@@ -22,6 +22,9 @@
 
 #pragma once
 
+#ifndef _PPSSPP_COMMON_TYPES_H_
+#define _PPSSPP_COMMON_TYPES_H_
+
 #if defined(_MSC_VER)
 
 typedef unsigned __int8 u8;
@@ -80,3 +83,5 @@ typedef signed int s32;
 typedef signed long long s64;
 
 #endif // _WIN32
+
+#endif

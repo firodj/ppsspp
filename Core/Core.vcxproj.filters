@@ -93,6 +93,11 @@
     </Filter>
     <Filter Include="MIPS\RiscV">
       <UniqueIdentifier>{067e3128-3aaf-4ed1-b19e-bab11606abe7}</UniqueIdentifier>
+    <Filter Include="BBTrace">
+      <UniqueIdentifier>{4546ef1a-d53c-4a32-905b-67d66c0fa42b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sora">
+      <UniqueIdentifier>{f0a22510-20b1-4337-a840-f60a29b25b5b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1299,6 +1304,11 @@
     </ClCompile>
     <ClCompile Include="Util\GameDB.cpp">
       <Filter>Util</Filter>
+    <ClCompile Include="BBTrace.cpp">
+      <Filter>BBTrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sora\sora.cpp">
+      <Filter>Sora</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2075,6 +2085,11 @@
     </ClInclude>
     <ClInclude Include="Util\GameDB.h">
       <Filter>Util</Filter>
+    <ClInclude Include="BBTrace.h">
+      <Filter>BBTrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sora\sora.h">
+      <Filter>Sora</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -2090,6 +2105,9 @@
     </None>
     <None Include="..\ext\libzip\Android.mk">
       <Filter>Ext\libzip</Filter>
+    </None>
+    <None Include="..\sora\entries.inc">
+      <Filter>Sora</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

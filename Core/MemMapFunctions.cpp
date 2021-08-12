@@ -25,6 +25,10 @@
 
 #include "Core/MIPS/MIPS.h"
 
+#ifdef BUILD_DISASM
+void Disasm_MemoryException(u32 address, u32 pc, const char* desc);
+#endif
+
 namespace Memory {
 
 u8 *GetPointerWrite(const u32 address) {
@@ -34,6 +38,7 @@ u8 *GetPointerWrite(const u32 address) {
 		((address & 0x3F000000) >= 0x08000000 && (address & 0x3F000000) < 0x08000000 + g_MemorySize)) { // More RAM (remasters, etc.)
 		return GetPointerWriteUnchecked(address);
 	} else {
+#ifndef BUILD_DISASM
 		static bool reported = false;
 		if (!reported) {
 			Reporting::ReportMessage("Unknown GetPointerWrite %08x PC %08x LR %08x", address, currentMIPS->pc, currentMIPS->r[MIPS_REG_RA]);
@@ -42,6 +47,9 @@ u8 *GetPointerWrite(const u32 address) {
 
 		// Size is not known, we pass 0 to signal that.
 		Core_MemoryException(address, 0, currentMIPS->pc, MemoryExceptionType::WRITE_BLOCK);
+#else
+		Disasm_MemoryException(address, currentMIPS->pc, "MemoryExceptionType::WRITE_WORD");
+#endif
 		return nullptr;
 	}
 }
@@ -53,6 +61,7 @@ const u8 *GetPointer(const u32 address) {
 		((address & 0x3F000000) >= 0x08000000 && (address & 0x3F000000) < 0x08000000 + g_MemorySize)) { // More RAM (remasters, etc.)
 		return GetPointerUnchecked(address);
 	} else {
+#ifndef BUILD_DISASM
 		static bool reported = false;
 		if (!reported) {
 			Reporting::ReportMessage("Unknown GetPointer %08x PC %08x LR %08x", address, currentMIPS->pc, currentMIPS->r[MIPS_REG_RA]);
@@ -60,6 +69,9 @@ const u8 *GetPointer(const u32 address) {
 		}
 		// Size is not known, we pass 0 to signal that.
 		Core_MemoryException(address, 0, currentMIPS->pc, MemoryExceptionType::READ_BLOCK);
+#else
+		Disasm_MemoryException(address, currentMIPS->pc, "MemoryExceptionType::WRITE_BLOCK");
+#endif
 		return nullptr;
 	}
 }
@@ -112,12 +124,16 @@ inline void ReadFromHardware(T &var, const u32 address) {
 		// More RAM (remasters, etc.)
 		var = *((const T*)GetPointerUnchecked(address));
 	} else {
+#ifndef BUILD_DISASM
 		static bool reported = false;
 		if (!reported) {
 			Reporting::ReportMessage("ReadFromHardware: Invalid address %08x near PC %08x LR %08x", address, currentMIPS->pc, currentMIPS->r[MIPS_REG_RA]);
 			reported = true;
 		}
 		Core_MemoryException(address, sizeof(T), currentMIPS->pc, MemoryExceptionType::READ_WORD);
+#else
+		Disasm_MemoryException(address, currentMIPS->pc, "MemoryExceptionType::READ_WORD");
+#endif
 		var = 0;
 	}
 }
@@ -137,12 +153,16 @@ inline void WriteToHardware(u32 address, const T data) {
 		// More RAM (remasters, etc.)
 		*(T*)GetPointerUnchecked(address) = data;
 	} else {
+#ifndef BUILD_DISASM
 		static bool reported = false;
 		if (!reported) {
 			Reporting::ReportMessage("WriteToHardware: Invalid address %08x near PC %08x LR %08x", address, currentMIPS->pc, currentMIPS->r[MIPS_REG_RA]);
 			reported = true;
 		}
 		Core_MemoryException(address, sizeof(T), currentMIPS->pc, MemoryExceptionType::WRITE_WORD);
+#else
+		Disasm_MemoryException(address, currentMIPS->pc, "MemoryExceptionType::WRITE_WORD");
+#endif
 	}
 }
 

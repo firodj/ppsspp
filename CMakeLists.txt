@@ -2273,6 +2273,11 @@ add_library(${CoreLibName} ${CoreLinkType}
 	Core/Util/BlockAllocator.h
 	Core/Util/PPGeDraw.cpp
 	Core/Util/PPGeDraw.h
+	Core/BBTrace.cpp
+	Core/BBTrace.h
+	sora/sora.cpp
+	sora/sora.h
+	sora/entries.inc
 	${GPU_SOURCES}
 	ext/disarm.cpp
 	ext/disarm.h

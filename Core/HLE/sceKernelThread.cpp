@@ -24,6 +24,7 @@
 #include "Common/CommonTypes.h"
 #include "Common/LogManager.h"
 #include "Common/StringUtils.h"
+#include "Common/File/FileUtil.h"
 #include "Common/Serialize/Serializer.h"
 #include "Common/Serialize/SerializeFuncs.h"
 #include "Common/Serialize/SerializeList.h"
@@ -49,6 +50,8 @@
 #include "Core/HLE/KernelThreadDebugInterface.h"
 #include "Core/HLE/KernelWaitHelpers.h"
 #include "Core/HLE/ThreadQueueList.h"
+#include "Core/Debugger/SymbolMap.h"
+#include "Core/BBTrace.h"
 
 struct WaitTypeNames {
 	WaitType type;
@@ -370,6 +373,7 @@ public:
 	SceUID cbId;
 };
 
+// PSPThread
 class PSPThread : public KernelObject {
 public:
 	PSPThread() : debug(currentMIPS, context) {}
@@ -380,10 +384,10 @@ public:
 	void GetQuickInfo(char *ptr, int size) override {
 		sprintf(ptr, "pc= %08x sp= %08x %s %s %s %s %s %s (wt=%i wid=%i wv= %08x )",
 			context.pc, context.r[MIPS_REG_SP],
-			(nt.status & THREADSTATUS_RUNNING) ? "RUN" : "", 
-			(nt.status & THREADSTATUS_READY) ? "READY" : "", 
-			(nt.status & THREADSTATUS_WAIT) ? "WAIT" : "", 
-			(nt.status & THREADSTATUS_SUSPEND) ? "SUSPEND" : "", 
+			(nt.status & THREADSTATUS_RUNNING) ? "RUN" : "",
+			(nt.status & THREADSTATUS_READY) ? "READY" : "",
+			(nt.status & THREADSTATUS_WAIT) ? "WAIT" : "",
+			(nt.status & THREADSTATUS_SUSPEND) ? "SUSPEND" : "",
 			(nt.status & THREADSTATUS_DORMANT) ? "DORMANT" : "",
 			(nt.status & THREADSTATUS_DEAD) ? "DEAD" : "",
 			(int)nt.waitType,
@@ -596,6 +600,9 @@ public:
 	std::vector<SceUID> waitingThreads;
 	// Key is the callback id it was for, or if no callback, the thread id.
 	std::map<SceUID, u64> pausedWaits;
+
+	// bbtrace
+	BBTrace bbTrace;
 };
 
 struct WaitTypeFuncs
@@ -729,6 +736,10 @@ void MipsCall::setReturnValue(u64 value)
 
 inline PSPThread *__GetCurrentThread() {
 	return currentThreadPtr;
+}
+
+PSPThread *BBTrace_GetCurrentThread() {
+	return __GetCurrentThread();
 }
 
 inline void __SetCurrentThread(PSPThread *thread, SceUID threadID, const char *name) {
@@ -936,6 +947,17 @@ void __KernelThreadingInit()
 		__KernelWriteFakeSysCall(threadHacks[i].nid, threadHacks[i].addr, pos);
 	}
 
+	// Debug
+	u32 hacksize = pos - idleThreadHackAddr;
+	g_symbolMap->AddModule("ThreadHack", idleThreadHackAddr, hacksize);
+	g_symbolMap->AddFunction("zz__sceKernelIdle", idleThreadHackAddr, sizeof(idleThreadCode));
+	for (size_t i = 0; i < ARRAY_SIZE(threadHacks); ++i) {
+		// Add the symbol to the symbol map for debugging.
+		char temp[256];
+		sprintf(temp,"zz_%s", GetFuncName("FakeSysCalls", threadHacks[i].nid));
+		g_symbolMap->AddFunction(temp, *threadHacks[i].addr, 8);
+	}
+
 	eventScheduledWakeup = CoreTiming::RegisterEvent("ScheduledWakeup", &hleScheduledWakeup);
 	eventThreadEndTimeout = CoreTiming::RegisterEvent("ThreadEndTimeout", &hleThreadEndTimeout);
 	actionAfterMipsCall = __KernelRegisterActionType(ActionAfterMipsCall::Create);
@@ -1014,7 +1036,9 @@ void __KernelThreadingDoStateLate(PointerWrap &p)
 
 KernelObject *__KernelThreadObject()
 {
-	return new PSPThread;
+	PSPThread *t = new PSPThread;
+	t->bbTrace.SetData(t);
+	return t;
 }
 
 KernelObject *__KernelCallbackObject()
@@ -1673,6 +1697,8 @@ u32 __KernelDeleteThread(SceUID threadID, int exitStatus, const char *reason)
 		RETURN(error);
 		t->nt.status = THREADSTATUS_DEAD;
 
+		t->bbTrace.Flush();
+
 		if (__KernelThreadTriggerEvent((t->nt.attr & PSP_THREAD_ATTR_KERNEL) != 0, threadID, THREADEVENT_DELETE)) {
 			// Don't delete it yet.  We'll delete later.
 			pendingDeleteThreads.push_back(threadID);
@@ -1834,6 +1860,9 @@ void __KernelResetThread(PSPThread *t, int lowestPriority) {
 	t->context.reset();
 	t->context.pc = t->nt.entrypoint;
 
+	t->bbTrace.StartThread(t->context.pc);
+	t->bbTrace.Naming((const char*)t->nt.name, 32);
+
 	// If the thread would be better than lowestPriority, reset to its initial.  Yes, kinda odd...
 	if (t->nt.currentPriority < lowestPriority)
 		t->nt.currentPriority = t->nt.initialPriority;
@@ -1862,6 +1891,7 @@ PSPThread *__KernelCreateThread(SceUID &id, SceUID moduleId, const char *name, u
 	std::lock_guard<std::mutex> guard(threadqueueLock);
 
 	PSPThread *t = new PSPThread();
+	t->bbTrace.SetData(t);
 	id = kernelObjects.Create(t);
 
 	threadqueue.push_back(id);
@@ -1904,7 +1934,7 @@ PSPThread *__KernelCreateThread(SceUID &id, SceUID moduleId, const char *name, u
 	return t;
 }
 
-SceUID __KernelSetupRootThread(SceUID moduleID, int args, const char *argp, int prio, int stacksize, int attr) 
+SceUID __KernelSetupRootThread(SceUID moduleID, int args, const char *argp, int prio, int stacksize, int attr)
 {
 	//grab mips regs
 	SceUID id;
@@ -1973,7 +2003,7 @@ int __KernelCreateThread(const char *threadName, SceUID moduleID, u32 entry, u32
 	if ((attr & PSP_THREAD_ATTR_KERNEL) == 0) {
 		if (allowKernel && (attr & PSP_THREAD_ATTR_USER) == 0) {
 			attr |= PSP_THREAD_ATTR_KERNEL;
-		} else {			
+		} else {
 			attr |= PSP_THREAD_ATTR_USER;
 		}
 	}
@@ -3051,6 +3081,8 @@ void __KernelSwitchContext(PSPThread *target, const char *reason) {
 	if (cur)  // It might just have been deleted.
 	{
 		__KernelSaveContext(&cur->context, (cur->nt.attr & PSP_THREAD_ATTR_VFPU) != 0);
+		cur->bbTrace.RecordEnd();
+
 		oldPC = currentMIPS->pc;
 		oldUID = cur->GetUID();
 
@@ -3641,7 +3673,7 @@ int LoadExecForUser_362A956B()
 		WARN_LOG(SCEKERNEL, "LoadExecForUser_362A956B() : invalid address for parameterArea on userMemory  (0x%08X)", parameterArea);
 		return SCE_KERNEL_ERROR_ILLEGAL_ADDR;
 	}
-	
+
 	u32 size = Memory::Read_U32(parameterArea);
 	if (size < 12) {
 		WARN_LOG(SCEKERNEL, "LoadExecForUser_362A956B() : invalid parameterArea size %d", size);
@@ -3793,4 +3825,12 @@ int sceKernelReferThreadEventHandlerStatus(SceUID uid, u32 infoPtr) {
 	} else {
 		return hleLogDebug(SCEKERNEL, 0, "struct size was 0");
 	}
+}
+
+// BBTrace
+
+BBTrace *BBTrace::GetFromCurrentThread() {
+	PSPThread *current = __GetCurrentThread();
+	if (current) return &current->bbTrace;
+	return nullptr;
 }

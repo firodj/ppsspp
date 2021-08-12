@@ -130,7 +130,7 @@ debian/ppsspp/
 # CMake stuff
 CMakeFiles
 
-# Clangd 
+# Clangd
 .cache/
 build
 libretro/obj/local

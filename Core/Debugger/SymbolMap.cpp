@@ -81,6 +81,7 @@ void SymbolMap::Clear() {
 	activeNeedUpdate_ = false;
 }
 
+#ifndef BUILD_DISASM
 bool SymbolMap::LoadSymbolMap(const Path &filename) {
 	Clear();  // let's not recurse the lock
 
@@ -327,9 +328,10 @@ void SymbolMap::SaveNocashSym(const Path &filename) const {
 		const FunctionEntry& e = it->second;
 		fprintf(f, "%08X %s,%04X\n", GetModuleAbsoluteAddr(e.start,e.module),GetLabelNameRel(e.start, e.module), e.size);
 	}
-	
+
 	fclose(f);
 }
+#endif // BUILD_DISASM
 
 SymbolType SymbolMap::GetSymbolType(u32 address) {
 	if (activeNeedUpdate_)
@@ -365,7 +367,7 @@ bool SymbolMap::GetSymbolInfo(SymbolInfo *info, u32 address, SymbolType symmask)
 
 	if (symmask & ST_DATA) {
 		dataAddress = GetDataStart(address);
-		
+
 		if (dataAddress != INVALID_ADDRESS) {
 			if (info != NULL) {
 				info->type = ST_DATA;
@@ -1055,6 +1057,7 @@ DataType SymbolMap::GetDataType(u32 startAddress) {
 	return it->second.type;
 }
 
+#ifndef BUILD_DISASM
 void SymbolMap::GetLabels(std::vector<LabelDefinition> &dest) {
 	if (activeNeedUpdate_)
 		UpdateActiveSymbols();
@@ -1069,6 +1072,7 @@ void SymbolMap::GetLabels(std::vector<LabelDefinition> &dest) {
 		dest.push_back(entry);
 	}
 }
+#endif // BUILD_DISASM
 
 #if defined(_WIN32) && !PPSSPP_PLATFORM(UWP)
 

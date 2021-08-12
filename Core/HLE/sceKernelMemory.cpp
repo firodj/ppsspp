@@ -1263,7 +1263,7 @@ static int sceKernelSetCompiledSdkVersion370(int sdkVersion) {
 	return 0;
 }
 
-static int sceKernelSetCompiledSdkVersion380_390(int sdkVersion) {
+int sceKernelSetCompiledSdkVersion380_390(int sdkVersion) {
 	int sdkMainVersion = sdkVersion & 0xFFFF0000;
 	if (sdkMainVersion != 0x03080000 && sdkMainVersion != 0x03090000) {
 		WARN_LOG_REPORT(SCEKERNEL, "sceKernelSetCompiledSdkVersion380_390 unknown SDK: %x", sdkVersion);
@@ -1378,7 +1378,7 @@ int sceKernelGetCompiledSdkVersion() {
 	return sdkVersion_;
 }
 
-static int sceKernelSetCompilerVersion(int version) {
+int sceKernelSetCompilerVersion(int version) {
 	DEBUG_LOG(SCEKERNEL, "sceKernelSetCompilerVersion(%08x)", version);
 	compilerVersion_ = version;
 	flags_ |= SCE_KERNEL_HASCOMPILERVERSION;

@@ -59,7 +59,7 @@ namespace Memory {
 
 // In 64-bit, this might point to "high memory" (above the 32-bit limit),
 // so be sure to load it into a 64-bit register.
-extern u8 *base; 
+extern u8 *base;
 
 // This replaces RAM_NORMAL_SIZE at runtime.
 extern u32 g_MemorySize;
@@ -115,6 +115,8 @@ void DoState(PointerWrap &p);
 void Clear();
 // False when shutdown has already been called.
 bool IsActive();
+
+void SoraDumpMemory();
 
 class MemoryInitedLock {
 public:
@@ -220,7 +222,7 @@ inline void WriteUnchecked_U8(u8 data, u32 address) {
 #endif
 }
 
-inline float Read_Float(u32 address) 
+inline float Read_Float(u32 address)
 {
 	u32 ifloat = Read_U32(address);
 	float f;

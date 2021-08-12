@@ -41,6 +41,7 @@
 #include "GPU/GPU.h"
 #include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
+#include "sora/sora.h"
 
 #if PPSSPP_ARCH(X86) || PPSSPP_ARCH(AMD64)
 #include <emmintrin.h>
@@ -1546,6 +1547,9 @@ static const ReplacementTableEntry entries[] = {
 	{ "gow_fps_hack", &Hook_gow_fps_hack, 0, REPFLAG_HOOKEXIT , 0 },
 	{ "gow_vortex_hack", &Hook_gow_vortex_hack, 0, REPFLAG_HOOKENTER, 0x60 },
 	{ "ZZT3_select_hack", &Hook_ZZT3_select_hack, 0, REPFLAG_HOOKENTER, 0xC4 },
+	
+	#include "sora/entries.inc"
+	
 	{}
 };
 
@@ -1743,4 +1747,14 @@ bool CanReplaceJalTo(u32 dest, const ReplacementTableEntry **entry, u32 *funcSiz
 		return false;
 	}
 	return true;
+}
+
+void WriteReplaceInstructionByName(u32 address, const char *name) {
+	auto indexes = replacementNameLookup.find(name);
+	if (indexes == replacementNameLookup.end()) {
+		return;
+	}
+	for (int index: indexes->second) {
+		WriteReplaceInstruction(address, index);
+	}
 }

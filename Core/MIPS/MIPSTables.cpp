@@ -30,6 +30,7 @@
 #include "Core/CoreTiming.h"
 #include "Core/Reporting.h"
 #include "Core/Debugger/Breakpoints.h"
+#include "Core/BBTrace.h"
 
 #include "JitCommon/JitCommon.h"
 
@@ -871,8 +872,41 @@ static const MIPSInstruction *mipsTables[NumEncodings] = {
 	0,
 };
 
+const char *GetInstructionsTableName(u32 encoding) {
+	switch(encoding) {
+		case Imme: return "Imme";
+		case Spec: return "Spec";
+		case Spe2: return "Spe2";
+		case Spe3: return "Spe3";
+		case RegI: return "RegI";
+		case Cop0: return "Cop0";
+		case Cop0CO: return "Cop0CO";
+		case Cop1: return "Cop1";
+		case Cop1BC: return "Cop1BC";
+		case Cop1S: return "Cop1S";
+		case Cop1W: return "Cop1W";
+		case Cop2: return "Cop2";
+		case Cop2BC2: return "Cop2BC2";
+		case Cop2Rese: return "Cop2Rese";
+		case VFPU0: return "VFPU0";
+		case VFPU1: return "VFPU1";
+		case VFPU3: return "VFPU3";
+		case VFPU4Jump: return "VFPU4Jump";
+		case VFPU7: return "VFPU7";
+		case VFPU4: return "VFPU4";
+		case VFPU5: return "VFPU5";
+		case VFPU6: return "VFPU6";
+		case VFPUMatrix1: return "VFPUMatrix1";
+		case VFPU9: return "VFPU9";
+		case ALLEGREX0: return "ALLEGREX0";
+		case Emu: return "Emu";
+		case Rese: return "Rese";
+		default: return "?";
+	}
+}
+
 //arm encoding table
-//const MIPSInstruction mipsinstructions[] = 
+//const MIPSInstruction mipsinstructions[] =
 //{
 //{Comp_Unimpl,Dis_Unimpl, Info_NN,    0, 0x601,       0x1FE,0}, //could be used for drec hook :) bits 5-24 plus 0-3 are available, 19 bits are more than enough
 // DATA PROCESSING INSTRUCTIONS
@@ -882,9 +916,13 @@ static const MIPSInstruction *mipsTables[NumEncodings] = {
 
 // TODO : generate smart dispatcher functions from above tables
 // instead of this slow method.
-const MIPSInstruction *MIPSGetInstruction(MIPSOpcode op) {
+const MIPSInstruction *MIPSGetInstruction(MIPSOpcode op, std::string *logs = nullptr) {
 	MipsEncoding encoding = Imme;
 	const MIPSInstruction *instr = &tableImmediate[op.encoding >> 26];
+#ifdef BUILD_DISASM
+	if (logs)
+		*logs = "imme[" + std::to_string(op.encoding >> 26) + ":" + (instr->name ? instr->name : "?") + "]";
+#endif
 	while (instr->altEncoding != Instruc) {
 		if (instr->altEncoding == Inval) {
 			//ERROR_LOG(CPU, "Invalid instruction %08x in table %i, entry %i", op, (int)encoding, subop);
@@ -895,6 +933,12 @@ const MIPSInstruction *MIPSGetInstruction(MIPSOpcode op) {
 		const MIPSInstruction *table = mipsTables[encoding];
 		const u32 subop = (op.encoding >> encodingBits[encoding].shift) & encodingBits[encoding].mask;
 		instr = &table[subop];
+
+#ifdef BUILD_DISASM
+		if (logs)
+			*logs += " tab[" + std::to_string(encoding) + ":" + GetInstructionsTableName(encoding) + "][" + std::to_string(subop) + ":" + (instr->name ? instr->name : "?") + "]";
+#endif
+
 	}
 	//alright, we have a valid MIPS instruction!
 	return instr;
@@ -918,11 +962,11 @@ void MIPSCompileOp(MIPSOpcode op, MIPSComp::MIPSFrontendInterface *jit) {
 	}
 }
 
-void MIPSDisAsm(MIPSOpcode op, u32 pc, char *out, size_t outSize, bool tabsToSpaces) {
+void MIPSDisAsm(MIPSOpcode op, u32 pc, char *out, size_t outSize, bool tabsToSpaces, std::string *logs) {
 	if (op == 0) {
 		truncate_cpy(out, outSize, "nop");
 	} else {
-		const MIPSInstruction *instr = MIPSGetInstruction(op);
+		const MIPSInstruction *instr = MIPSGetInstruction(op, logs);
 		if (instr && instr->disasm) {
 			instr->disasm(op, pc, out, outSize);
 			if (tabsToSpaces) {
@@ -967,6 +1011,7 @@ void MIPSInterpret(MIPSOpcode op) {
 #define _RD   ((op>>11) & 0x1F)
 #define R(i)   (curMips->r[i])
 
+#ifndef BUILD_DISASM
 static inline void RunUntilFast() {
 	MIPSState *curMips = currentMIPS;
 	// NEVER stop in a delay slot!
@@ -1061,6 +1106,7 @@ int MIPSInterpret_RunUntil(u64 globalTicks) {
 
 	return 1;
 }
+#endif
 
 const char *MIPSGetName(MIPSOpcode op)
 {

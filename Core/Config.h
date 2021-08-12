@@ -545,6 +545,9 @@ public:
 	std::string upgradeMessage;  // The actual message from the server is currently not used, need a translation mechanism. So this just acts as a flag.
 	std::string upgradeVersion;
 	std::string dismissedVersion;
+	
+	// BBTrace
+	bool bSoraPatch;
 
 	void Load(const char *iniFileName = nullptr, const char *controllerIniFilename = nullptr);
 	bool Save(const char *saveReason);

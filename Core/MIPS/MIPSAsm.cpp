@@ -19,7 +19,7 @@
 #include "Core/MIPS/MIPSAsm.h"
 
 namespace MIPSAsm
-{	
+{
 	static std::string errorText;
 
 std::string GetAssembleError()
@@ -43,9 +43,11 @@ public:
 			return false;
 
 		Memory::Memcpy((u32)address, data, (u32)length, "Debugger");
-		
+
+#ifndef BUILD_DISASM
 		// In case this is a delay slot or combined instruction, clear cache above it too.
 		mipsr4k.InvalidateICache((u32)(address - 4), (int)length + 4);
+#endif
 
 		address += length;
 		return true;

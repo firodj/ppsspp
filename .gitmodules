@@ -53,3 +53,6 @@
 [submodule "ext/libchdr"]
 	path = ext/libchdr
 	url = https://github.com/rtissera/libchdr.git
+[submodule "disasm/pspsora"]
+	path = disasm/pspsora
+	url = https://github.com/firodj/pspsora.git

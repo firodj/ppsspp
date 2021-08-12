@@ -1229,6 +1229,7 @@ void MainScreen::CreateViews() {
 	if (System_GetPropertyBool(SYSPROP_HAS_FILE_BROWSER)) {
 		rightColumnChoices->Add(new Choice(mm->T("Load", "Load...")))->OnClick.Handle(this, &MainScreen::OnLoadFile);
 	}
+	bbTraceCBox_ = rightColumnItems->Add(new CheckBox(&g_Config.bSoraPatch, "Sora Patch"));
 	rightColumnChoices->Add(new Choice(mm->T("Game Settings", "Settings")))->OnClick.Handle(this, &MainScreen::OnGameSettings);
 	rightColumnChoices->Add(new Choice(mm->T("Credits")))->OnClick.Handle(this, &MainScreen::OnCredits);
 

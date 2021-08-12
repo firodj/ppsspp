@@ -45,6 +45,9 @@
 #include "Core/MIPS/JitCommon/JitCommon.h"
 #include "Common/Thread/ParallelLoop.h"
 
+#include "Common/File/FileUtil.h"
+#include "Core/BBTrace.h"
+
 namespace Memory {
 
 // The base pointer to the auto-mirrored arena.
@@ -150,7 +153,7 @@ static bool Memory_TryBase(u32 flags) {
 		if (view.size == 0)
 			continue;
 		SKIP(flags, view.flags);
-		
+
 		if (view.flags & MV_MIRROR_PREVIOUS) {
 			position = last_position;
 		}
@@ -393,6 +396,35 @@ void DoState(PointerWrap &p) {
 	p.DoMarker("VRAM");
 	DoArray(p, m_pPhysicalScratchPad, SCRATCHPAD_SIZE);
 	p.DoMarker("ScratchPad");
+}
+
+void SoraDumpMemory() {
+	constexpr u32 start = PSP_GetKernelMemoryBase();
+	const uint8_t *d = GetPointer(start);
+	const char* env_p = nullptr;
+	std::string msg;
+
+#ifdef WIN32
+	env_p = std::getenv("USERPROFILE");
+#else
+	env_p = std::getenv("HOME");
+#endif
+	Path path(env_p + std::string("/Sora/SoraMemory.bin"));
+
+	FILE *f = File::OpenCFile(path, "wb");
+	if (!f) {
+		msg = "Unable to write SoraDumpMemory.";
+		ERROR_LOG(MEMMAP, "%s", msg.c_str());
+		BBTraceLog(msg);
+		return;
+	}
+
+	fwrite(d, 1, g_MemorySize, f);
+	fclose(f);
+
+	msg = "Write SoraDumpMemory into: " + path.ToString();
+	INFO_LOG(MEMMAP, "%s", msg.c_str());
+	BBTraceLog(msg);
 }
 
 void Shutdown() {
