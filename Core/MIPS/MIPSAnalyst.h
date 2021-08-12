@@ -155,6 +155,7 @@ namespace MIPSAnalyst
 		bool isLikelyBranch;
 		bool isBranchToRegister;
 		int branchRegisterNum;
+		bool hasDelaySlot;
 
 		// data access
 		bool isDataAccess;

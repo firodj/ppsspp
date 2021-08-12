@@ -109,6 +109,7 @@ public:
 	std::string GetLabelString(u32 address);
 	void SetLabelName(const char* name, u32 address);
 	bool GetLabelValue(const char* name, u32& dest);
+	const char *GetLabelName(u32 address);
 
 	void AddData(u32 address, u32 size, DataType type, int moduleIndex = -1);
 	u32 GetDataStart(u32 address);
@@ -122,7 +123,6 @@ public:
 
 private:
 	void AssignFunctionIndices();
-	const char *GetLabelName(u32 address);
 	const char *GetLabelNameRel(u32 relAddress, int moduleIndex) const;
 
 	struct FunctionEntry {

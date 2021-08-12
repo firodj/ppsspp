@@ -140,7 +140,7 @@ public:
 
 	bool parseSymbol(char* str, uint32_t& symbolValue) override
 	{
-		return g_symbolMap->GetLabelValue(str,symbolValue); 
+		return g_symbolMap->GetLabelValue(str,symbolValue);
 	}
 
 	uint32_t getReferenceValue(uint32_t referenceIndex) override
@@ -153,6 +153,7 @@ public:
 			return cpu->GetHi();
 		if (referenceIndex == REF_INDEX_LO)
 			return cpu->GetLo();
+#ifndef BUILD_DISASM
 		if (referenceIndex == REF_INDEX_THREAD)
 			return __KernelGetCurThread();
 		if (referenceIndex == REF_INDEX_MODULE)
@@ -161,6 +162,7 @@ public:
 			return (uint32_t)CoreTiming::GetGlobalTimeUs();  // Loses information
 		if (referenceIndex == REF_INDEX_TICKS)
 			return (uint32_t)CoreTiming::GetTicks();
+#endif
 		if ((referenceIndex & ~(REF_INDEX_FPU | REF_INDEX_FPU_INT)) < 32)
 			return cpu->GetRegValue(1, referenceIndex & ~(REF_INDEX_FPU | REF_INDEX_FPU_INT));
 		if ((referenceIndex & ~(REF_INDEX_VFPU | REF_INDEX_VFPU_INT)) < 128)
@@ -174,7 +176,7 @@ public:
 		}
 		return EXPR_TYPE_UINT;
 	}
-	
+
 	bool getMemoryValue(uint32_t address, int size, uint32_t& dest, std::string *error) override {
 		// We allow, but ignore, bad access.
 		// If we didn't, log/condition statements that reference registers couldn't be configured.
@@ -220,26 +222,40 @@ unsigned int MIPSDebugInterface::readMemory(unsigned int address) {
 
 bool MIPSDebugInterface::isAlive()
 {
+#ifndef BUILD_DISASM
 	return PSP_IsInited() && coreState != CORE_BOOT_ERROR && coreState != CORE_RUNTIME_ERROR && coreState != CORE_POWERDOWN;
+#else
+	return true;
+#endif
 }
 
-bool MIPSDebugInterface::isBreakpoint(unsigned int address) 
+bool MIPSDebugInterface::isBreakpoint(unsigned int address)
 {
+#ifndef BUILD_DISASM
 	return CBreakPoints::IsAddressBreakPoint(address);
+#else
+	return false;
+#endif
 }
 
 void MIPSDebugInterface::setBreakpoint(unsigned int address)
 {
+#ifndef BUILD_DISASM
 	CBreakPoints::AddBreakPoint(address);
+#endif
 }
 void MIPSDebugInterface::clearBreakpoint(unsigned int address)
 {
+#ifndef BUILD_DISASM
 	CBreakPoints::RemoveBreakPoint(address);
+#endif
 }
 void MIPSDebugInterface::clearAllBreakpoints() {}
 void MIPSDebugInterface::toggleBreakpoint(unsigned int address)
 {
+#ifndef BUILD_DISASM
 	CBreakPoints::IsAddressBreakPoint(address)?CBreakPoints::RemoveBreakPoint(address):CBreakPoints::AddBreakPoint(address);
+#endif
 }
 
 
@@ -250,7 +266,7 @@ int MIPSDebugInterface::getColor(unsigned int address)
 	if (n==-1) return 0xFFFFFF;
 	return colors[n%6];
 }
-std::string MIPSDebugInterface::getDescription(unsigned int address) 
+std::string MIPSDebugInterface::getDescription(unsigned int address)
 {
 	return g_symbolMap->GetDescription(address);
 }
@@ -258,16 +274,24 @@ std::string MIPSDebugInterface::getDescription(unsigned int address)
 bool MIPSDebugInterface::initExpression(const char* exp, PostfixExpression& dest)
 {
 	MipsExpressionFunctions funcs(this);
+#ifndef BUILD_DISASM
 	return initPostfixExpression(exp,&funcs,dest);
+#else
+	return false;
+#endif
 }
 
 bool MIPSDebugInterface::parseExpression(PostfixExpression& exp, u32& dest)
 {
 	MipsExpressionFunctions funcs(this);
+#ifndef BUILD_DISASM
 	return parsePostfixExpression(exp,&funcs,dest);
+#else
+	return false;
+#endif
 }
 
-void MIPSDebugInterface::runToBreakpoint() 
+void MIPSDebugInterface::runToBreakpoint()
 {
 
 }
@@ -304,4 +328,3 @@ std::string MIPSDebugInterface::GetRegName(int cat, int index) {
 	}
 	return "???";
 }
-

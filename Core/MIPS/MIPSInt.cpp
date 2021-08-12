@@ -35,6 +35,7 @@
 #include "Core/HLE/HLETables.h"
 #include "Core/HLE/ReplaceTables.h"
 #include "Core/System.h"
+#include "Core/BBTrace.h"
 
 #define R(i) (currentMIPS->r[i])
 #define F(i) (currentMIPS->f[i])
@@ -58,11 +59,17 @@
 static inline void DelayBranchTo(u32 where)
 {
 	if (!Memory::IsValidAddress(where) || (where & 3) != 0) {
+#ifndef BUILD_DISASM
 		Core_ExecException(where, PC, ExecExceptionType::JUMP);
+#endif
 	}
 	PC += 4;
 	mipsr4k.nextPC = where;
 	mipsr4k.inDelaySlot = true;
+#ifndef BUILD_DISASM
+	BBTrace *bbTrace = BBTrace::GetFromCurrentThread();
+	bbTrace->next_adj_bb(where);
+#endif
 }
 
 static inline void SkipLikely() {
@@ -76,6 +83,7 @@ static inline void SkipLikely() {
 	}
 }
 
+#ifndef BUILD_DISASM
 int MIPS_SingleStep()
 {
 	MIPSOpcode op = Memory::Read_Opcode_JIT(mipsr4k.pc);
@@ -90,6 +98,7 @@ int MIPS_SingleStep()
 	}
 	return 1;
 }
+#endif
 
 namespace MIPSInt
 {
@@ -112,6 +121,7 @@ namespace MIPSInt
 		switch (func) {
 		// Icache
 		case 8:
+#ifndef BUILD_DISASM
 			// Invalidate the instruction cache at this address.
 			// We assume the CPU won't be reset during this, so no locking.
 			if (MIPSComp::jit) {
@@ -130,6 +140,7 @@ namespace MIPSInt
 					WARN_LOG_REPORT_ONCE(icacheInvalidatePC, Log::JIT, "Invalidating address near PC: %08x (%08x + %d) at PC=%08x", addr, R(rs), imm, PC);
 				}
 			}
+#endif
 			break;
 
 		// Dcache
@@ -166,7 +177,9 @@ namespace MIPSInt
 			mipsr4k.pc += 4;
 		}
 		mipsr4k.inDelaySlot = false;
+#ifndef BUILD_DISASM
 		CallSyscall(op);
+#endif
 	}
 
 	void Int_Sync(MIPSOpcode op)
@@ -178,7 +191,9 @@ namespace MIPSInt
 	void Int_Break(MIPSOpcode op)
 	{
 		Reporting::ReportMessage("BREAK instruction hit");
+#ifndef BUILD_DISASM
 		Core_Break(PC);
+#endif
 		PC += 4;
 	}
 
@@ -540,11 +555,13 @@ namespace MIPSInt
 				if (fs == 31) {
 					currentMIPS->fcr31 = value & 0x0181FFFF;
 					currentMIPS->fpcond = (value >> 23) & 1;
+#ifndef BUILD_DISASM
 					// Don't bother locking, assuming the CPU can't be reset now anyway.
 					if (MIPSComp::jit) {
 						// In case of DISABLE, we need to tell jit we updated FCR31.
 						MIPSComp::jit->UpdateFCR31();
 					}
+#endif
 				} else {
 					WARN_LOG_REPORT(Log::CPU, "WriteFCR: Unexpected reg %d (value %08x)", fs, value);
 				}
@@ -1038,7 +1055,11 @@ namespace MIPSInt
 		}
 		// It's a replacement func!
 		int index = op.encoding & 0xFFFFFF;
+#ifndef BUILD_DISASM
 		const ReplacementTableEntry *entry = GetReplacementFunc(index);
+#else
+		const ReplacementTableEntry* entry = nullptr;
+#endif
 		if (entry && entry->replaceFunc && (entry->flags & REPFLAG_DISABLED) == 0) {
 			int cycles = entry->replaceFunc();
 

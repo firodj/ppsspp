@@ -62,3 +62,6 @@
 [submodule "ios/MoltenVK"]
 	path = ios/MoltenVK
 	url = https://github.com/hrydgard/ppsspp-moltenvk.git
+[submodule "disasm/pspsora"]
+	path = disasm/pspsora
+	url = https://github.com/firodj/pspsora.git

@@ -120,7 +120,7 @@ struct FPL : public KernelObject
 			blocks[block] = true;
 		return block;
 	}
-	
+
 	bool freeBlock(int b) {
 		if (blocks[b]) {
 			blocks[b] = false;
@@ -678,7 +678,7 @@ int sceKernelCreateFpl(const char *name, u32 mpid, u32 attr, u32 blockSize, u32 
 	bool atEnd = (attr & PSP_FPL_ATTR_HIGHMEM) != 0;
 	u32 address = allocator->Alloc(totalSize, atEnd, StringFromFormat("FPL/%s", name).c_str());
 	if (address == (u32)-1) {
-		DEBUG_LOG(Log::sceKernel, "sceKernelCreateFpl(\"%s\", partition=%i, attr=%08x, bsize=%i, nb=%i) FAILED - out of ram", 
+		DEBUG_LOG(Log::sceKernel, "sceKernelCreateFpl(\"%s\", partition=%i, attr=%08x, bsize=%i, nb=%i) FAILED - out of ram",
 			name, mpid, attr, blockSize, numBlocks);
 		return SCE_KERNEL_ERROR_NO_MEMORY;
 	}
@@ -700,7 +700,7 @@ int sceKernelCreateFpl(const char *name, u32 mpid, u32 attr, u32 blockSize, u32 
 	fpl->address = address;
 	fpl->alignedSize = alignedSize;
 
-	DEBUG_LOG(Log::sceKernel, "%i=sceKernelCreateFpl(\"%s\", partition=%i, attr=%08x, bsize=%i, nb=%i)", 
+	DEBUG_LOG(Log::sceKernel, "%i=sceKernelCreateFpl(\"%s\", partition=%i, attr=%08x, bsize=%i, nb=%i)",
 		id, name, mpid, attr, blockSize, numBlocks);
 
 	return id;
@@ -1180,7 +1180,7 @@ static int sceKernelPrintf(const char *formatString)
 			std::memcpy(&f_arg, &PARAM(param++), sizeof(u32));
 			stream << f_arg;
 			result += stream.str();
-			
+
 			++i;
 			stream.str(std::string()); // Reset the stream
 			break;
@@ -1261,7 +1261,7 @@ static int sceKernelSetCompiledSdkVersion370(int sdkVersion) {
 	return 0;
 }
 
-static int sceKernelSetCompiledSdkVersion380_390(int sdkVersion) {
+int sceKernelSetCompiledSdkVersion380_390(int sdkVersion) {
 	int sdkMainVersion = sdkVersion & 0xFFFF0000;
 	if (sdkMainVersion != 0x03080000 && sdkMainVersion != 0x03090000) {
 		WARN_LOG_REPORT(Log::sceKernel, "sceKernelSetCompiledSdkVersion380_390 unknown SDK: %x", sdkVersion);
@@ -1376,7 +1376,7 @@ int sceKernelGetCompiledSdkVersion() {
 	return sdkVersion_;
 }
 
-static int sceKernelSetCompilerVersion(int version) {
+int sceKernelSetCompilerVersion(int version) {
 	DEBUG_LOG(Log::sceKernel, "sceKernelSetCompilerVersion(%08x)", version);
 	compilerVersion_ = version;
 	flags_ |= SCE_KERNEL_HASCOMPILERVERSION;
@@ -1541,7 +1541,7 @@ SceUID sceKernelCreateVpl(const char *name, int partition, u32 attr, u32 vplSize
 	vpl->header = PSPPointer<SceKernelVplHeader>::Create(memBlockPtr);
 	vpl->header->Init(memBlockPtr, vplSize);
 
-	DEBUG_LOG(Log::sceKernel, "%x=sceKernelCreateVpl(\"%s\", block=%i, attr=%i, size=%i)", 
+	DEBUG_LOG(Log::sceKernel, "%x=sceKernelCreateVpl(\"%s\", block=%i, attr=%i, size=%i)",
 		id, name, partition, vpl->nv.attr, vpl->nv.poolSize);
 
 	if (optPtr != 0)
@@ -1877,18 +1877,18 @@ static u32 GetMemoryBlockPtr(u32 uid, u32 addr) {
 static u32 SysMemUserForUser_D8DE5C1E() {
 	// Called by Evangelion Jo and return 0 here to go in-game.
 	ERROR_LOG(Log::sceKernel,"UNIMPL SysMemUserForUser_D8DE5C1E()");
-	return 0; 
+	return 0;
 }
 
 static u32 SysMemUserForUser_ACBD88CA() {
 	ERROR_LOG_REPORT_ONCE(SysMemUserForUser_ACBD88CA, Log::sceKernel, "UNIMPL SysMemUserForUser_ACBD88CA()");
-	return 0; 
+	return 0;
 }
 
 static u32 SysMemUserForUser_945E45DA() {
 	// Called by Evangelion Jo and expected return 0 here.
 	ERROR_LOG_REPORT_ONCE(SysMemUserForUser945E45DA, Log::sceKernel, "UNIMPL SysMemUserForUser_945E45DA()");
-	return 0; 
+	return 0;
 }
 
 enum

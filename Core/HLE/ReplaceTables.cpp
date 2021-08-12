@@ -41,6 +41,7 @@
 #include "GPU/GPU.h"
 #include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
+#include "sora/sora.h"
 
 #if PPSSPP_ARCH(X86) || PPSSPP_ARCH(AMD64)
 #include <emmintrin.h>
@@ -617,7 +618,7 @@ static int Replace_dl_write_matrix() {
 		RETURN(0);
 		return 60;
 	}
-	
+
 	*dest++ = matrix;
 	matrix += 0x01000000;
 
@@ -1600,6 +1601,9 @@ static const ReplacementTableEntry entries[] = {
 	{ "ZZT3_select_hack", &Hook_ZZT3_select_hack, 0, REPFLAG_HOOKENTER, 0xC4 },
 	{ "blitz_fps_hack", &Hook_blitz_fps_hack, 0, REPFLAG_HOOKEXIT , 0 },
 	{ "brian_lara_fps_hack", &Hook_brian_lara_fps_hack, 0, REPFLAG_HOOKEXIT , 0 },
+
+	#include "sora/entries.inc"
+
 	{}
 };
 
@@ -1795,4 +1799,14 @@ bool CanReplaceJalTo(u32 dest, const ReplacementTableEntry **entry, u32 *funcSiz
 		return false;
 	}
 	return true;
+}
+
+void WriteReplaceInstructionByName(u32 address, const char *name) {
+	auto indexes = replacementNameLookup.find(name);
+	if (indexes == replacementNameLookup.end()) {
+		return;
+	}
+	for (int index: indexes->second) {
+		WriteReplaceInstruction(address, index);
+	}
 }

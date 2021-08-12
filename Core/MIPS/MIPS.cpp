@@ -89,7 +89,9 @@ const float cst_constants[32] = {
 };
 
 MIPSState::MIPSState() {
+#ifndef BUILD_DISASM
 	MIPSComp::jit = nullptr;
+#endif
 
 	// Initialize vorder
 
@@ -161,12 +163,14 @@ MIPSState::~MIPSState() {
 }
 
 void MIPSState::Shutdown() {
+#ifndef BUILD_DISASM
 	std::lock_guard<std::recursive_mutex> guard(MIPSComp::jitLock);
 	MIPSComp::JitInterface *oldjit = MIPSComp::jit;
 	if (oldjit) {
 		MIPSComp::jit = nullptr;
 		delete oldjit;
 	}
+#endif
 }
 
 void MIPSState::Reset() {
@@ -209,6 +213,7 @@ void MIPSState::Init() {
 
 	memset(vcmpResult, 0, sizeof(vcmpResult));
 
+#ifndef BUILD_DISASM
 	std::lock_guard<std::recursive_mutex> guard(MIPSComp::jitLock);
 	if (PSP_CoreParameter().cpuCore == CPUCore::JIT || PSP_CoreParameter().cpuCore == CPUCore::JIT_IR) {
 		MIPSComp::jit = MIPSComp::CreateNativeJit(this, PSP_CoreParameter().cpuCore == CPUCore::JIT_IR);
@@ -217,12 +222,14 @@ void MIPSState::Init() {
 	} else {
 		MIPSComp::jit = nullptr;
 	}
+#endif
 }
 
 bool MIPSState::HasDefaultPrefix() const {
 	return vfpuCtrl[VFPU_CTRL_SPREFIX] == 0xe4 && vfpuCtrl[VFPU_CTRL_TPREFIX] == 0xe4 && vfpuCtrl[VFPU_CTRL_DPREFIX] == 0;
 }
 
+#ifndef BUILD_DISASM
 void MIPSState::UpdateCore(CPUCore desired) {
 	if (PSP_CoreParameter().cpuCore == desired) {
 		return;
@@ -267,7 +274,9 @@ void MIPSState::UpdateCore(CPUCore desired) {
 	std::lock_guard<std::recursive_mutex> guard(MIPSComp::jitLock);
 	MIPSComp::jit = newjit;
 }
+#endif
 
+#ifndef BUILD_DISASM
 void MIPSState::DoState(PointerWrap &p) {
 	auto s = p.Section("MIPSState", 1, 4);
 	if (!s)
@@ -321,14 +330,18 @@ void MIPSState::DoState(PointerWrap &p) {
 		MIPSComp::jit->UpdateFCR31();
 	}
 }
+#endif
 
+#ifndef BUILD_DISASM
 void MIPSState::SingleStep() {
 	int cycles = MIPS_SingleStep();
 	currentMIPS->downcount -= cycles;
 	CoreTiming::Advance();
 }
+#endif
 
 // returns 1 if reached ticks limit
+#ifndef BUILD_DISASM
 int MIPSState::RunLoopUntil(u64 globalTicks) {
 	switch (PSP_CoreParameter().cpuCore) {
 	case CPUCore::JIT:
@@ -350,6 +363,7 @@ int MIPSState::RunLoopUntil(u64 globalTicks) {
 	}
 	return 1;
 }
+#endif
 
 // Kept outside MIPSState to avoid header pollution (MIPS.h doesn't even have vector, and is used widely.)
 static std::vector<std::pair<u32, int>> pendingClears;
@@ -366,6 +380,7 @@ void MIPSState::ProcessPendingClears() {
 	hasPendingClears = false;
 }
 
+#ifndef BUILD_DISASM
 void MIPSState::InvalidateICache(u32 address, int length) {
 	// Only really applies to jit.
 	// Note that the backend is responsible for ensuring native code can still be returned to.
@@ -374,7 +389,9 @@ void MIPSState::InvalidateICache(u32 address, int length) {
 		MIPSComp::jit->InvalidateCacheAt(address, length);
 	}
 }
+#endif
 
+#ifndef BUILD_DISASM
 void MIPSState::ClearJitCache() {
 	std::lock_guard<std::recursive_mutex> guard(MIPSComp::jitLock);
 	if (MIPSComp::jit) {
@@ -387,3 +404,4 @@ void MIPSState::ClearJitCache() {
 		}
 	}
 }
+#endif
