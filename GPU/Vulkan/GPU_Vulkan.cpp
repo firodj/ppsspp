@@ -108,6 +108,7 @@ GPU_Vulkan::GPU_Vulkan(GraphicsContext *gfxCtx, Draw::DrawContext *draw)
 		shaderCacheLoaded_ = false;
 
 		std::thread th([&] {
+			setCurrentThreadName("VkShaderCacheLoader");
 			LoadCache(shaderCachePath_);
 			shaderCacheLoaded_ = true;
 		});
