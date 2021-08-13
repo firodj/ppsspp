@@ -115,3 +115,6 @@ debian/ppsspp/
 
 # RenderDoc
 *.rdc
+
+# Config
+installed.txt
