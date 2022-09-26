@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 #include "Common/CommonTypes.h"
 
@@ -8,6 +9,13 @@
 #define KIND_SZ 0x5A53 // 53'S' 5A'Z'
 #define KIND_START 0x00005453 // 53'S' 54'T'
 #define KIND_NAME 0x00004D4E // 4E'N', 4D'M'
+#define BB_LOG_SIZE 10
+#define BB_LOG_TTL 100
+
+typedef struct {
+	std::string messages[BB_LOG_SIZE];
+	int size;
+} BBLogs;
 
 class BBTrace {
 public:
@@ -38,3 +46,5 @@ private:
 };
 
 void DumpBBTrace(BBTrace *bbTrace);
+void BBTraceLog(std::string msg);
+void BBTraceLogs(BBLogs& bblogs);

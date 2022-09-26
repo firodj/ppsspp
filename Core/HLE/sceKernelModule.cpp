@@ -52,6 +52,7 @@
 #include "Core/MemMapHelpers.h"
 #include "Core/Debugger/SymbolMap.h"
 #include "Core/MIPS/MIPS.h"
+#include "Core/BBTrace.h"
 
 #include "Core/HLE/sceKernel.h"
 #include "Core/HLE/sceKernelModule.h"
@@ -1144,6 +1145,7 @@ static int gzipDecompress(u8 *OutBuffer, int OutBufferLength, u8 *InBuffer) {
 }
 
 void SoraDumpModule(PSPModule *module) {
+	std::string msg;
 	const char* env_p;
 #ifdef WIN32
 	env_p = std::getenv("USERPROFILE");
@@ -1153,7 +1155,9 @@ void SoraDumpModule(PSPModule *module) {
 	Path path(env_p + std::string("/Sora/Sora.yaml"));
 	FILE *f = File::OpenCFile(path, "wb");
 	if (!f) {
-		ERROR_LOG(SCEMODULE, "Unable to write SoreDumpModule.");
+		msg = "Unable to write SoreDumpModule.";
+		ERROR_LOG(SCEMODULE, msg.c_str());
+		BBTraceLog(msg);
 		return;
 	}
 	fprintf(f, "module:\n");
@@ -1240,7 +1244,9 @@ void SoraDumpModule(PSPModule *module) {
 
 	fclose(f);
 
-	INFO_LOG(SCEMODULE, "Done write SoreDumpModule into: %s", path.c_str());
+	msg = "Done write SoreDumpModule into: " + path.ToString();
+	INFO_LOG(SCEMODULE, msg.c_str());
+	BBTraceLog(msg);
 }
 
 static PSPModule *__KernelLoadELFFromPtr(const u8 *ptr, size_t elfSize, u32 loadAddress, bool fromTop, std::string *error_string, u32 *magic, u32 &error) {
@@ -1738,8 +1744,6 @@ static PSPModule *__KernelLoadELFFromPtr(const u8 *ptr, size_t elfSize, u32 load
 
 	return module;
 }
-
-
 
 SceUID KernelLoadModule(const std::string &filename, std::string *error_string) {
 	PSPFileInfo info = pspFileSystem.GetFileInfo(filename);

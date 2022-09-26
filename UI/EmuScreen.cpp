@@ -56,6 +56,7 @@ using namespace std::placeholders;
 #include "Core/MemFault.h"
 #include "Core/Reporting.h"
 #include "Core/System.h"
+#include "Core/BBTrace.h"
 #include "GPU/GPUState.h"
 #include "GPU/GPUInterface.h"
 #include "GPU/Common/FramebufferManagerCommon.h"
@@ -648,7 +649,7 @@ void EmuScreen::onVKeyDown(int virtualKeyCode) {
 		if (g_Config.bDumpFrames == g_Config.bDumpAudio) {
 			g_Config.bDumpFrames = !g_Config.bDumpFrames;
 			g_Config.bDumpAudio = !g_Config.bDumpAudio;
-		} else { 
+		} else {
 			// This hotkey should always toggle both audio and video together.
 			// So let's make sure that's the only outcome even if video OR audio was already being dumped.
 			if (g_Config.bDumpFrames) {
@@ -1296,6 +1297,24 @@ static void DrawFPS(UIContext *ctx, const Bounds &bounds) {
 	ctx->RebindTexture();
 }
 
+// BBTrace
+static void DrawBBTraceLogs(UIContext *ctx, const Bounds &bounds) {
+	BBLogs bblogs;
+	BBTraceLogs(bblogs);
+
+	FontID ubuntu24("UBUNTU24");
+
+	ctx->Flush();
+	ctx->BindFontTexture();
+	ctx->Draw()->SetFontScale(0.7f, 0.7f);
+	for (int i=0,y=bounds.y2()-10; i<bblogs.size; i++,y-=24) {
+		ctx->Draw()->DrawTextShadow(ubuntu24, bblogs.messages[i].c_str(), 10, y, 0xFFFFFF3f, ALIGN_BOTTOMLEFT | FLAG_DYNAMIC_ASCII);
+	}
+	ctx->Draw()->SetFontScale(1.0f, 1.0f);
+	ctx->Flush();
+	ctx->RebindTexture();
+}
+
 static void DrawFrameTimes(UIContext *ctx, const Bounds &bounds) {
 	FontID ubuntu24("UBUNTU24");
 	int valid, pos;
@@ -1514,6 +1533,7 @@ void EmuScreen::renderUI() {
 
 	if (g_Config.iShowFPSCounter && !invalid_) {
 		DrawFPS(ctx, ctx->GetLayoutBounds());
+		DrawBBTraceLogs(ctx, ctx->GetLayoutBounds());
 	}
 
 	if (g_Config.bDrawFrameGraph && !invalid_) {

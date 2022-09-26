@@ -47,6 +47,7 @@
 #include "UI/OnScreenDisplay.h"
 
 #include "Common/File/FileUtil.h"
+#include "Core/BBTrace.h"
 
 namespace Memory {
 
@@ -384,8 +385,10 @@ void DoState(PointerWrap &p) {
 
 void SoraDumpMemory() {
 	constexpr u32 start = PSP_GetKernelMemoryBase();
-	uint8_t *d = GetPointer(start);
+	const uint8_t *d = GetPointer(start);
 	const char* env_p = nullptr;
+	std::string msg;
+
 #ifdef WIN32
 	env_p = std::getenv("USERPROFILE");
 #else
@@ -395,14 +398,18 @@ void SoraDumpMemory() {
 
 	FILE *f = File::OpenCFile(path, "wb");
 	if (!f) {
-		ERROR_LOG(MEMMAP, "Unable to write SoraDumpMemory.");
+		msg = "Unable to write SoraDumpMemory.";
+		ERROR_LOG(MEMMAP, "%s", msg.c_str());
+		BBTraceLog(msg);
 		return;
 	}
 
 	fwrite(d, 1, g_MemorySize, f);
 	fclose(f);
 
-	INFO_LOG(MEMMAP, "Write SoraDumpMemory into %s.", path.c_str());
+	msg = "Write SoraDumpMemory into: " + path.ToString();
+	INFO_LOG(MEMMAP, "%s", msg.c_str());
+	BBTraceLog(msg);
 }
 
 void Shutdown() {

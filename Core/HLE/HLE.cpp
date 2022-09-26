@@ -42,6 +42,7 @@
 #include "Core/HLE/sceKernelThread.h"
 #include "Core/HLE/sceKernelInterrupt.h"
 #include "Core/HLE/HLE.h"
+#include "Core/BBTrace.h"
 
 enum
 {
@@ -905,6 +906,7 @@ void hleDoLogInternal(LogTypes::LOG_TYPE t, LogTypes::LOG_LEVELS level, u64 res,
 
 void SoraDumpHLE() {
 	const char* env_p;
+	std::string msg;
 #ifdef WIN32
 	env_p = std::getenv("USERPROFILE");
 #else
@@ -913,7 +915,9 @@ void SoraDumpHLE() {
 	Path path(env_p + std::string("/Sora/Sora.yaml"));
 	FILE* f = File::OpenCFile(path, "ab+");
 	if (!f) {
-		ERROR_LOG(SCEMODULE, "Unable to write SoreDumpModule.");
+		msg = "Unable to write SoreDumpModule";
+		BBTraceLog(msg);
+		ERROR_LOG(SCEMODULE, msg.c_str());
 		return;
 	}
 	fprintf(f, "hle_modules:\n");
@@ -934,4 +938,7 @@ void SoraDumpHLE() {
 	}
 
 	fclose(f);
+
+	msg = "Writing SoreDumpModule: " + path.ToString();
+	BBTraceLog(msg);
 }
