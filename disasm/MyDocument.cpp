@@ -512,7 +512,7 @@ MyDocument::SaveAnalyzed(std::string path) {
 	for (auto it = bbManager_.references_.begin(); it != bbManager_.references_.end(); it++) {
 		write << "  - from: 0x" << std::hex << it->first.first << '\n';
 		write << "    to: 0x" << std::hex << it->first.second << '\n';
-		write << "    flags: 0x" << std::hex << (uint)it->second.flags_ << std::endl;
+		write << "    flags: 0x" << std::hex << (unsigned)it->second.flags_ << std::endl;
 	}
 
 	write << "functions:" << std::endl;

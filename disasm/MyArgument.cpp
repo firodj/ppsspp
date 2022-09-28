@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <sstream>
+#include <cstring>
+#include <cstdio>
 
 void MyArgument::Scan(const char * opr, size_t sz) {
 	char rs[256];
@@ -13,13 +15,13 @@ void MyArgument::Scan(const char * opr, size_t sz) {
     return;
   }
 
-  int n = sscanf(opr, "%08x(%s)", &imm, rs);
+  int n = std::sscanf(opr, "%08x(%s)", &imm, rs);
 	if (n >= 1) {
     type_ = ArgImm;
 		value_ = imm;
 		if (n >= 2) {
       type_ = ArgMem;
-			reg_ = std::string(rs, strlen(rs) - 1);
+			reg_ = std::string(rs, std::strlen(rs) - 1);
 		}
 	} else {
     type_ = ArgReg;

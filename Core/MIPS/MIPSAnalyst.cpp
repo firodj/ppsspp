@@ -76,7 +76,9 @@ namespace std {
 
 static std::unordered_set<HashMapFunc> hashMap;
 
+#ifndef BUILD_DISASM
 static Path hashmapFileName;
+#endif
 
 #define MIPSTABLE_IMM_MASK 0xFC000000
 
@@ -910,7 +912,7 @@ namespace MIPSAnalyst {
 					validbits &= ~0x03FFFFFF;
 				buffer[pos++] = instr & validbits;
 			}
-			
+
 			f.hash = CityHash64((const char *) &buffer[0], buffer.size() * sizeof(u32));
 			f.hasHash = true;
 skip:
@@ -1323,6 +1325,7 @@ skip:
 		return 0;
 	}
 
+#ifndef BUILD_DISASM
 	void SetHashMapFilename(const std::string& filename) {
 		if (filename.empty())
 			hashmapFileName = GetSysDirectory(DIRECTORY_SYSTEM) / "knownfuncs.ini";
@@ -1356,6 +1359,7 @@ skip:
 		}
 		fclose(file);
 	}
+#endif
 
 	void ApplyHashMap() {
 		UpdateHashToFunctionMap();
@@ -1395,6 +1399,7 @@ skip:
 		}
 	}
 
+#ifndef BUILD_DISASM
 	void LoadHashMap(const Path &filename) {
 		FILE *file = File::OpenCFile(filename, "rt");
 		if (!file) {
@@ -1418,6 +1423,7 @@ skip:
 		}
 		fclose(file);
 	}
+#endif
 
 	std::vector<MIPSGPReg> GetInputRegs(MIPSOpcode op) {
 		std::vector<MIPSGPReg> vec;

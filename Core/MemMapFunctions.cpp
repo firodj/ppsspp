@@ -39,12 +39,16 @@ u8 *GetPointerWrite(const u32 address) {
 		((address & 0x3F000000) >= 0x08000000 && (address & 0x3F000000) < 0x08000000 + g_MemorySize)) { // More RAM (remasters, etc.)
 		return GetPointerWriteUnchecked(address);
 	} else {
+#ifndef BUILD_DISASM
 		static bool reported = false;
 		if (!reported) {
 			Reporting::ReportMessage("Unknown GetPointerWrite %08x PC %08x LR %08x", address, currentMIPS->pc, currentMIPS->r[MIPS_REG_RA]);
 			reported = true;
 		}
 		Core_MemoryException(address, currentMIPS->pc, MemoryExceptionType::WRITE_BLOCK);
+#else
+		Disasm_MemoryException(address, currentMIPS->pc, "MemoryExceptionType::WRITE_WORD");
+#endif
 		return nullptr;
 	}
 }

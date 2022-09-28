@@ -269,13 +269,21 @@ std::string MIPSDebugInterface::getDescription(unsigned int address)
 bool MIPSDebugInterface::initExpression(const char* exp, PostfixExpression& dest)
 {
 	MipsExpressionFunctions funcs(this);
+#ifndef BUILD_DISASM
 	return initPostfixExpression(exp,&funcs,dest);
+#else
+	return false;
+#endif
 }
 
 bool MIPSDebugInterface::parseExpression(PostfixExpression& exp, u32& dest)
 {
 	MipsExpressionFunctions funcs(this);
+#ifndef BUILD_DISASM
 	return parsePostfixExpression(exp,&funcs,dest);
+#else
+	return false;
+#endif
 }
 
 void MIPSDebugInterface::runToBreakpoint()

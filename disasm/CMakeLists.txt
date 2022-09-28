@@ -1,0 +1,107 @@
+cmake_minimum_required(VERSION 3.6)
+project(psp-disasm)
+
+if(WIN32)
+	add_definitions(-D_UNICODE -DUNICODE)
+endif()
+if(NOT ANDROID)
+	set(CMAKE_CXX_STANDARD 11)
+endif()
+
+set(DisasmSource
+	stub.cpp
+	Memory.cpp
+	Yaml.cpp
+	Yaml.hpp
+	MyArgument.cpp
+	MyArgument.hpp
+	MyInstruction.cpp
+	MyInstruction.hpp
+	MyFunction.cpp
+	MyFunction.hpp
+	BasicBlock.cpp
+	BasicBlock.hpp
+	MyDocument.cpp
+	MyDocument.hpp
+	Pseudo.cpp
+	Pseudo.hpp
+	UseDef.cpp
+	UseDef.hpp
+	BBTraceParser.cpp
+	BBTraceParser.hpp
+	FlameGraph.cpp
+	FlameGraph.hpp
+
+	../Core/Debugger/SymbolMap.cpp
+	../Core/Debugger/SymbolMap.h
+	../Core/MemmapFunctions.cpp
+
+	../ext/xxhash.c
+	../ext/xxhash.h
+
+	../Core/MIPS/MIPS.cpp
+	../Core/MIPS/MIPS.h
+	../Core/MIPS/MIPSAnalyst.cpp
+	../Core/MIPS/MIPSAnalyst.h
+	../Core/MIPS/MIPSAsm.cpp
+	../Core/MIPS/MIPSAsm.h
+	../Core/MIPS/MIPSCodeUtils.cpp
+	../Core/MIPS/MIPSCodeUtils.h
+	../Core/MIPS/MIPSDebugInterface.cpp
+	../Core/MIPS/MIPSDebugInterface.h
+	../Core/MIPS/MIPSDis.cpp
+	../Core/MIPS/MIPSDis.h
+	../Core/MIPS/MIPSDisVFPU.cpp
+	../Core/MIPS/MIPSDisVFPU.h
+	../Core/MIPS/MIPSInt.cpp
+	../Core/MIPS/MIPSInt.h
+	../Core/MIPS/MIPSIntVFPU.cpp
+	../Core/MIPS/MIPSIntVFPU.h
+	../Core/MIPS/MIPSStackWalk.cpp
+	../Core/MIPS/MIPSStackWalk.h
+	../Core/MIPS/MIPSTables.cpp
+	../Core/MIPS/MIPSTables.h
+	../Core/MIPS/MIPSVFPUUtils.cpp
+	../Core/MIPS/MIPSVFPUUtils.h
+)
+
+add_library(cityhash STATIC
+	../ext/cityhash/city.cpp
+	../ext/cityhash/city.h
+	../ext/cityhash/citycrc.h
+)
+if(NOT MSVC)
+	# These can be fast even for debug.
+	set_target_properties(cityhash PROPERTIES COMPILE_FLAGS "-O2")
+endif()
+
+add_library(disasmlib STATIC ${DisasmSource})
+target_compile_definitions(disasmlib PUBLIC BUILD_DISASM)
+target_compile_features(disasmlib PUBLIC cxx_std_11)
+target_include_directories(disasmlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_link_libraries(disasmlib PUBLIC cityhash)
+
+# was: Common cityhash armips libzstd_static disasmlib
+set(DISASM_DEPEND_LIBS cityhash disasmlib)
+
+if(APPLE AND (NOT IOS))
+	set(DISASM_COMBINED_LIB ${CMAKE_BINARY_DIR}/libdisasm_combined.a)
+
+	add_custom_target(disasm_combined
+	COMMAND libtool -static -o ${DISASM_COMBINED_LIB}
+		$<TARGET_FILE:disasmlib>
+		$<TARGET_FILE:cityhash>
+	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	DEPENDS ${DISASM_DEPEND_LIBS}
+	)
+	add_library(libdisasm_combined STATIC IMPORTED GLOBAL)
+	add_dependencies(libdisasm_combined disasm_combined)
+	set_target_properties(libdisasm_combined
+		PROPERTIES
+		IMPORTED_LOCATION ${DISASM_COMBINED_LIB}
+		)
+endif()
+
+add_executable(disasm main.cpp)
+target_compile_features(disasm PUBLIC cxx_std_11)
+target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
