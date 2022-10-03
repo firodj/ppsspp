@@ -31,6 +31,8 @@ set(DisasmSource
 	BBTraceParser.hpp
 	FlameGraph.cpp
 	FlameGraph.hpp
+	go_bridge.c
+	include/go_bridge.h
 
 	../Core/Debugger/SymbolMap.cpp
 	../Core/Debugger/SymbolMap.h
@@ -78,7 +80,9 @@ endif()
 add_library(disasmlib STATIC ${DisasmSource})
 target_compile_definitions(disasmlib PUBLIC BUILD_DISASM)
 target_compile_features(disasmlib PUBLIC cxx_std_11)
-target_include_directories(disasmlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(disasmlib
+	PUBLIC ${PROJECT_SOURCE_DIR}/..
+	PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(disasmlib PUBLIC cityhash)
 
 # was: Common cityhash armips libzstd_static disasmlib
@@ -105,3 +109,9 @@ endif()
 add_executable(disasm main.cpp)
 target_compile_features(disasm PUBLIC cxx_std_11)
 target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
+
+# Generate cgo wrapper
+add_custom_command(TARGET disasmlib
+                   POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include $<TARGET_FILE:disasmlib>
+)

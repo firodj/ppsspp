@@ -1,7 +1,8 @@
 #include <map>
 #include <iostream>
 
-#include "BasicBlock_internal.hpp"
+#include "BasicBlock.hpp"
+#include "UseDef.hpp"
 #include "MyInstruction.hpp"
 
 // -- BasicBlock --
@@ -27,27 +28,27 @@ BBReference::BBReference(): flags_(0)
 
 //--- BasicBlockManager ---
 
-BasicBlockManager::BasicBlockManager() {
-  internal_ = new BasicBlockManagerInternal();
+BasicBlockManager::BasicBlockManager(): instrManager_(nullptr) {
+
 }
 
 BasicBlockManager::~BasicBlockManager() {
-  delete internal_;
+
 }
 
 bool
 BasicBlockManager::BBIsExists(u32 addr) {
-  return internal_->basicBlocks_.find(addr) != internal_->basicBlocks_.end();
+  return basicBlocks_.find(addr) != basicBlocks_.end();
 }
 
 MapAddressToBasicBlock::iterator
 BasicBlockManager::BBBegin() {
-  return internal_->basicBlocks_.begin();
+  return basicBlocks_.begin();
 }
 
 MapAddressToBasicBlock::iterator
 BasicBlockManager::BBEnd() {
-  return internal_->basicBlocks_.end();
+  return basicBlocks_.end();
 }
 
 BasicBlock* BasicBlockManager::Get(u32 addr)
@@ -55,21 +56,21 @@ BasicBlock* BasicBlockManager::Get(u32 addr)
   if (!addr) return nullptr;
 
   BasicBlock *bb = nullptr;
-  auto it = internal_->basicBlocks_.lower_bound(addr);
-  if (it != internal_->basicBlocks_.end()) {
+  auto it = basicBlocks_.lower_bound(addr);
+  if (it != basicBlocks_.end()) {
 
     bb = it->second.get();
 
     if (addr != bb->addr_) {
-      if (it != internal_->basicBlocks_.begin()) {
+      if (it != basicBlocks_.begin()) {
         bb = std::prev(it)->second.get();
       } else {
         bb = nullptr;
       }
     }
   } else {
-    auto rit = internal_->basicBlocks_.rbegin();
-    if (rit != internal_->basicBlocks_.rend()) {
+    auto rit = basicBlocks_.rbegin();
+    if (rit != basicBlocks_.rend()) {
       bb = rit->second.get();
     }
   }
@@ -87,7 +88,7 @@ BasicBlock* BasicBlockManager::Create(u32 addr)
 
   bb = new BasicBlock(addr);
   // c++14: std::make_unique<BasicBlock>();
-  internal_->basicBlocks_[addr] = BasicBlockPtr(bb);
+  basicBlocks_[addr] = BasicBlockPtr(bb);
 
   return bb;
 }
@@ -96,13 +97,13 @@ BasicBlock* BasicBlockManager::After(u32 addr) {
   if (!addr) return nullptr;
 
   BasicBlock *bb = nullptr;
-  auto it = internal_->basicBlocks_.lower_bound(addr);
-  if (it != internal_->basicBlocks_.end()) {
+  auto it = basicBlocks_.lower_bound(addr);
+  if (it != basicBlocks_.end()) {
     bb = it->second.get();
 
     if (addr == bb->addr_) {
       it = std::next(it);
-      if (it != internal_->basicBlocks_.end()) {
+      if (it != basicBlocks_.end()) {
         bb = it->second.get();
       } else {
         bb = nullptr;
@@ -118,11 +119,11 @@ BasicBlockManager::FetchBasicBlock(u32 addr) {
   if (!addr) return nullptr;
 
   BasicBlock *bb = nullptr;
-  auto it = internal_->basicBlocks_.find(addr);
-  if (it == internal_->basicBlocks_.end()) {
+  auto it = basicBlocks_.find(addr);
+  if (it == basicBlocks_.end()) {
     // c++14: std::make_unique<BasicBlock>();
-    internal_->basicBlocks_[addr] = BasicBlockPtr(new BasicBlock(addr));
-    bb = internal_->basicBlocks_[addr].get();
+    basicBlocks_[addr] = BasicBlockPtr(new BasicBlock(addr));
+    bb = basicBlocks_[addr].get();
   } else {
     // std::cout << "Found BB at " << addr << std::endl;
     bb = it->second.get();
@@ -133,7 +134,7 @@ BasicBlockManager::FetchBasicBlock(u32 addr) {
 
 int
 BasicBlockManager::BBCount() {
-  return internal_->basicBlocks_.size();
+  return basicBlocks_.size();
 }
 
 BasicBlock *BasicBlockManager::SplitAt(u32 split_addr, BasicBlock **OUT_prev_bb) {

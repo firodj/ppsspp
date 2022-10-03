@@ -6,8 +6,6 @@
 
 #include "Types.hpp"
 
-class FunctionManagerInternal;
-
 class MyFunction {
 public:
   MyFunction();
@@ -22,6 +20,7 @@ public:
 
 typedef std::unique_ptr<MyFunction> FunctionPtr;
 typedef std::map<u32, FunctionPtr> MapAddressToFunction;
+typedef std::map<std::string, u32> MapNameToAddress;
 
 class FunctionManager {
 public:
@@ -38,7 +37,13 @@ public:
   MapAddressToFunction::iterator FNBegin();
   MapAddressToFunction::iterator FNEnd();
 
-  FunctionManagerInternal *internal() const { return internal_; }
+  //FunctionManagerInternal *internal() const { return internal_; }
+
+  MapAddressToFunction& functions() { return functions_; }
+  MapNameToAddress& mapNameToAddress() { return mapNameToAddress_; }
+
 private:
-  FunctionManagerInternal *internal_;
+  //FunctionManagerInternal *internal_;
+  MapAddressToFunction functions_;
+  MapNameToAddress mapNameToAddress_;
 };

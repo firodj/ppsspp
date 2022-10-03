@@ -10,6 +10,8 @@
 #include <ostream>
 #include <queue>
 
+#include "MyDocument.hpp"
+
 #include "Common/CommonTypes.h"
 #include "Core/MIPS/MIPSDebugInterface.h"
 // #include "Core/Debugger/DisassemblyManager.h"
@@ -23,9 +25,7 @@
 
 #include "Yaml_internal.hpp"
 
-#include "MyDocument_internal.hpp"
-#include "MyFunction_internal.hpp"
-#include "BasicBlock_internal.hpp"
+extern MyDocument* g_currentDocument;
 
 //--- MemoryDump ---//
 
@@ -45,7 +45,7 @@ MemoryDump::Allocate(size_t length) {
 //--- MyDocumentInternal ---//
 
 const char*
-MyDocumentInternal::GetFuncName(int moduleIndex, int func) {
+MyDocument::GetFuncName(int moduleIndex, int func) {
 	static char temp[256] = { 0 };
 	if (moduleDB_.size() > moduleIndex) {
 		auto &mod = moduleDB_[moduleIndex];
@@ -61,7 +61,7 @@ MyDocumentInternal::GetFuncName(int moduleIndex, int func) {
 }
 
 MyHLEFunction *
-MyDocumentInternal::GetFunc(std::string fullname) {
+MyDocument::GetFunc(std::string fullname) {
 	auto marker = fullname.find("::");
 	if (marker == std::string::npos) return nullptr;
 
@@ -83,31 +83,30 @@ MyDocumentInternal::GetFunc(std::string fullname) {
 
 //--- MyDocument ---//
 
-size_t MyDocument::MemorySize() { return internal_->buf_.length_; }
+size_t MyDocument::MemorySize() { return buf_.length_; }
 
-u8* MyDocument::MemoryPtr() { return internal_->buf_.data_; }
+u8* MyDocument::MemoryPtr() { return buf_.data_; }
 
-u32 MyDocument::MemoryStart() { return internal_->memory_start_;  }
+u32 MyDocument::MemoryStart() { return memory_start_;  }
 
-HLEModules &MyDocument::hleModules() { return internal_->moduleDB_; }
+HLEModules &MyDocument::hleModules() { return moduleDB_; }
 
-MyDocument::MyDocument(): bbtrace_parser_(this) {
-  bbManager_.internal()->instrManager(&instrManager_);
-	internal_ = new MyDocumentInternal(this);
+MyDocument::MyDocument(): bbtrace_parser_(this), memory_start_(0),
+  useDefAnalyzer_(this) {
+  bbManager_.instrManager(&instrManager_);
 }
 
 MyDocument::~MyDocument() {
 	Uninit();
-	delete internal_;
 }
 
 u32 MyDocument::GetFunctionStart(u32 address) {
-	u32 addr = internal_->symbol_map_.GetFunctionStart(address);
+	u32 addr = symbol_map_.GetFunctionStart(address);
 	return addr == SymbolMap::INVALID_ADDRESS ? 0 : addr;
 }
 
 std::string MyDocument::GetLabelString(u32 address) {
-	return internal_->symbol_map_.GetLabelString(address);
+	return symbol_map_.GetLabelString(address);
 }
 
 MyFunction *MyDocument::CreateNewFunction(u32 addr, u32 last_addr) {
@@ -121,7 +120,7 @@ MyFunction *MyDocument::CreateNewFunction(u32 addr, u32 last_addr) {
 	func->name_ = funcname;
 
 	u32 fn_size = func->last_addr_ - func->addr_ + 4;
-	internal_->symbol_map_.AddFunction(funcname, func->addr_, fn_size);
+	symbol_map_.AddFunction(funcname, func->addr_, fn_size);
 	funcManager_.RegisterNameToAddress(func->name_, func->addr_);
 
 	return func;
@@ -158,7 +157,7 @@ MyFunction *MyDocument::SplitFunctionAt(u32 split_addr, MyFunction **OUT_prev_fu
   }
 
 	u32 funcStart_size = funcStart->last_addr_ - funcStart->addr_ + 4;
-	internal_->symbol_map_.SetFunctionSize(funcStart->addr_, funcStart_size);
+	symbol_map_.SetFunctionSize(funcStart->addr_, funcStart_size);
 
   return split_func;
 }
@@ -184,7 +183,7 @@ void ParseArgTypes(const char *mask, int n, FuncArgTypes &types) {
 
 void MyDocument::Uninit() {
 	if (g_currentDocument == this) g_currentDocument = nullptr;
-	if (g_symbolMap == &internal_->symbol_map_) g_symbolMap = nullptr;
+	if (g_symbolMap == &symbol_map_) g_symbolMap = nullptr;
 }
 
 void LoadFunctionsFromYaml(MyDocument &self, Yaml::Node & node_functions) {
@@ -204,7 +203,7 @@ void LoadFunctionsFromYaml(MyDocument &self, Yaml::Node & node_functions) {
 			fn_last_address = fn_address + fn_size - 4;
 		}
 
-		self.internal()->symbol_map_.AddFunction(fn_name.c_str(), fn_address, fn_size);
+		self.symbol_map().AddFunction(fn_name.c_str(), fn_address, fn_size);
 
 		MyFunction *func = self.funcManager_.CreateFunction(fn_address);
 		if (!func) {
@@ -249,7 +248,7 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 	if (g_symbolMap) {
 		std::cout << "WARNING:\tMyDocument::Init\tOverride g_symbolMap" << std::endl;
 	}
-	g_symbolMap = &internal_->symbol_map_;
+	g_symbolMap = &symbol_map_;
 	if (g_currentDocument) {
 		std::cout << "WARNING:\tMyDocument::Init\tOverride g_currentDocument" << std::endl;
 	}
@@ -262,7 +261,8 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 	}
 	catch (const Yaml::Exception e)
 	{
-		std::cout << "ERROR\nMyDocument::Init\nexception " << e.Type() << ": " << e.what() << std::endl;
+		std::cout << "ERROR:\nMyDocument::Init#path\nexception " << e.Type() << ": " << e.what() << std::endl;
+		std::cout << path_yaml.c_str() << std::endl;
 		return EXIT_FAILURE;
 	}
 
@@ -274,20 +274,21 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 		}
 		catch (const Yaml::Exception e)
 		{
-			std::cout << "WARNING\nMyDocument::Init\nexception " << e.Type() << ": " << e.what() << std::endl;
+			std::cout << "WARNING:\nMyDocument::Init#analyzed\nexception " << e.Type() << ": " << e.what() << std::endl;
+			std::cout << path_anal.c_str() << std::endl;
 			load_analyzed = false;
 		}
 	}
 
-	internal_->memory_start_ = root["memory"]["start"].As<u32>();
+	memory_start_ = root["memory"]["start"].As<u32>();
 	u32 memory_size = root["memory"]["start"].As<u32>();
 	entry_addr_ = root["module"]["nm"]["entry_addr"].As<u32>();
 
-	internal_->buf_.Allocate(memory_size);
+	buf_.Allocate(memory_size);
 	std::ifstream bin(path_data, std::ios::binary);
-	bin.read((char*)internal_->buf_.data_, memory_size);
+	bin.read((char*)buf_.data_, memory_size);
 	bin.close();
-	Memory::base = internal_->buf_.data_ - internal_->memory_start_;
+	Memory::base = buf_.data_ - memory_start_;
 
 	Yaml::Node & node_modules = root["modules"];
 	for(auto it = node_modules.Begin(); it != node_modules.End(); it++) {
@@ -297,7 +298,7 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 		u32 fn_address = node_modu["address"].As<u32>();
 		u32 fn_size = node_modu["size"].As<u32>();
 
-		internal_->symbol_map_.AddModule(fn_name.c_str(), fn_address, fn_size);
+		symbol_map_.AddModule(fn_name.c_str(), fn_address, fn_size);
 	}
 
 	if (load_analyzed) {
@@ -309,7 +310,7 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 
 				auto bb = bbManager_.Create(bb_addr);
 				if (!bb) {
-					std::cout << "ERROR\nLoading BB:" << bb_addr << std::endl;
+					std::cout << "ERROR:\nLoading BB:" << bb_addr << std::endl;
 					continue;
 				}
 
@@ -367,7 +368,7 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 			}
 		}
 
-		internal_->moduleDB_.push_back(hlemod);
+		moduleDB_.push_back(hlemod);
 	}
 
 	entry_name_ = g_symbolMap->GetLabelString(entry_addr_);
@@ -383,7 +384,7 @@ MyDocument::BBProcessUseDef(BasicBlock *bb) {
 		if (!instrManager_.InstrIsExists(addr)) break;
 
 		MyInstruction* instr = instrManager_.FetchInstruction(addr);
-		internal_->useDefAnalyzer_.AnalyzeInstruction(instr);
+		useDefAnalyzer_.AnalyzeInstruction(instr);
 	}
 }
 
@@ -540,6 +541,8 @@ MyDocument::SaveAnalyzed(std::string path) {
 	fs.close();
 }
 
+// This function will check visited `func->bb_addrs_` start from
+// bb func->addr_.
 void
 MyDocument::ProcessAnalyzedFunc(MyFunction *func)
 {

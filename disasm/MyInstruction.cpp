@@ -13,7 +13,7 @@
 #include "Core/MIPS/MIPSAnalyst.h"
 #include "Core/MemMap.h"
 
-#include "MyInstruction_internal.hpp"
+#include "MyInstruction.hpp"
 
 //--- MyInstruction ---
 
@@ -126,11 +126,11 @@ const std::string &MyInstruction::AsString(bool encinfo) {
 // --- InstructionManager ---
 
 InstructionManager::InstructionManager() {
-	internal_ = new InstructionManagerInternal();
+
 }
 
 InstructionManager::~InstructionManager() {
-	delete internal_;
+
 }
 
 // deprecated
@@ -138,10 +138,10 @@ MyInstruction *InstructionManager::FetchInstruction(u32 addr) {
 	if (!addr) return nullptr;
 
   MyInstruction *instr = nullptr;
-  auto it = internal_->instructions_.find(addr);
-  if (it == internal_->instructions_.end()) {
+  auto it = instructions_.find(addr);
+  if (it == instructions_.end()) {
 		instr = new MyInstruction(addr);
-    internal_->instructions_[addr] = InstructionPtr(instr);
+    instructions_[addr] = InstructionPtr(instr);
   } else {
     instr = it->second.get();
   }
@@ -152,8 +152,8 @@ MyInstruction *InstructionManager::FetchInstruction(u32 addr) {
 MyInstruction* InstructionManager::GetInstruction(u32 addr) {
 	if (!addr) return nullptr;
 
-  auto it = internal_->instructions_.find(addr);
-  if (it != internal_->instructions_.end()) return it->second.get();
+  auto it = instructions_.find(addr);
+  if (it != instructions_.end()) return it->second.get();
 
 	return nullptr;
 }
@@ -161,10 +161,10 @@ MyInstruction* InstructionManager::GetInstruction(u32 addr) {
 MyInstruction* InstructionManager::CreateInstruction(u32 addr) {
 	if (!addr) return nullptr;
 
-  auto it = internal_->instructions_.find(addr);
-  if (it == internal_->instructions_.end()) {
+  auto it = instructions_.find(addr);
+  if (it == instructions_.end()) {
 		MyInstruction *instr = new MyInstruction(addr);
-    internal_->instructions_[addr] = InstructionPtr(instr);
+    instructions_[addr] = InstructionPtr(instr);
 
 		return instr;
   }
@@ -174,5 +174,5 @@ MyInstruction* InstructionManager::CreateInstruction(u32 addr) {
 
 
 bool InstructionManager::InstrIsExists(u32 addr) {
-  return internal_->instructions_.find(addr) != internal_->instructions_.end();
+  return instructions_.find(addr) != instructions_.end();
 }

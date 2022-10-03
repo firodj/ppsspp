@@ -44,3 +44,37 @@ segments.
   and already mapped.
 
 This way we don't need to parse ELF file again when doing analysis.
+
+The basicblock (bb) genereated by PPSSPP emulator is missing some part and
+some bb is not normalized. Not normalized by meant within a single bb
+there is possible another entry point in the middle of bb. Consider
+follwing case. At first we only have two bb's, A and B.
+
+```
+BB A:
+
+01 x
+02 x
+03 JMP
+
+BB B:
+
+04 x
+05 x
+06 JMP 02
+```
+
+But BB A, has other entry point onther than 01, which is 02, ref by 06. So
+BB A should become:
+
+```
+BB A:
+
+01 x
+
+BB C:
+
+02 x
+03 JMP
+```
+

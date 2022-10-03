@@ -2,8 +2,6 @@
 
 #include "FlameGraph.hpp"
 
-#include "MyDocument_internal.hpp"
-
 const int rect_size = 16;
 const int name_width = 100;
 

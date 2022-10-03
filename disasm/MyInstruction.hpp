@@ -74,9 +74,9 @@ public:
 	MyInstruction* GetInstruction(u32 addr);
   MyInstruction* CreateInstruction(u32 addr);
 
-	InstructionManagerInternal *internal() { return internal_; }
+	MapAddressToInstruction& instructions() { return instructions_; }
 private:
-	InstructionManagerInternal *internal_;
+	MapAddressToInstruction instructions_;
 };
 
 class PendingTarget {

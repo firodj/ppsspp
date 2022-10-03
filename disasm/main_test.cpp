@@ -7,9 +7,6 @@
 
 #include "argh.h"
 
-#include "MyDocument_internal.hpp"
-#include "MyInstruction_internal.hpp"
-#include "BasicBlock_internal.hpp"
 #include "FlameGraph.hpp"
 
 #include "Core/MIPS/MIPSAnalyst.h"

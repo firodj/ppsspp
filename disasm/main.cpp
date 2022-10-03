@@ -15,6 +15,8 @@
 #include "BasicBlock.hpp"
 #include "MyDocument.hpp"
 
+#include "go_bridge.h"
+
 void testSyscall(MyDocument &doc) {
 	auto inst = doc.Disasm(0x8A38A70);
 	std::cout << inst->AsString() << std::endl;
@@ -95,6 +97,8 @@ int main(int argc, char *argv[])
 
 		arg2.Scan("ra", 2);
 		std::cout << "a2 = " << arg2.Str() << std::endl;
+
+		int y = xgox(25);
 	} else if (action_name == "tes2") {
 		testJump(myDoc);
 		testSyscall(myDoc);

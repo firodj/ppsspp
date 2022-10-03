@@ -7,8 +7,6 @@
 #include "Types.hpp"
 #include "UseDef.hpp"
 
-class BasicBlockInternal;
-class BasicBlockManagerInternal;
 class InstructionManager;
 
 class BBReference {
@@ -75,8 +73,10 @@ public:
   BBReference &CreateReference(u32 from_addr, u32 to_addr);
   Addresses *RefsFrom(u32 addr);
   Addresses *RefsTo(u32 addr);
+  void instrManager(InstructionManager *instrManager) { instrManager_ = instrManager; }
 
-  BasicBlockManagerInternal *internal() { return internal_; }
 private:
-  BasicBlockManagerInternal *internal_;
+
+  MapAddressToBasicBlock basicBlocks_;
+  InstructionManager *instrManager_;
 };

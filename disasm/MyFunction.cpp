@@ -1,4 +1,4 @@
-#include "MyFunction_internal.hpp"
+#include "MyFunction.hpp"
 
 #include <iostream>
 
@@ -20,20 +20,18 @@ MyFunction::MyFunction(u32 addr): addr_(addr), last_addr_(0) {
 
 FunctionManager::FunctionManager()
 {
-  internal_ = new FunctionManagerInternal();
 }
 
 FunctionManager::~FunctionManager()
 {
-  delete internal_;
 }
 
 MyFunction*
 FunctionManager::GetFunction(u32 addr) {
   if (!addr) return nullptr;
 
-  auto it = internal_->functions_.find(addr);
-  if (it == internal_->functions_.end()) return nullptr;
+  auto it = functions().find(addr);
+  if (it == functions().end()) return nullptr;
 
   return it->second.get();
 }
@@ -42,41 +40,41 @@ MyFunction*
 FunctionManager::CreateFunction(u32 addr) {
   if (!addr) return nullptr;
 
-  auto it = internal_->functions_.find(addr);
-  if (it != internal_->functions_.end()) return nullptr;
+  auto it = functions().find(addr);
+  if (it != functions().end()) return nullptr;
 
   MyFunction *func = new MyFunction(addr);
-  internal_->functions_[addr] = FunctionPtr(func);
+  functions()[addr] = FunctionPtr(func);
 
   return func;
 }
 
 bool
 FunctionManager::IsExists(u32 addr) {
-  return internal_->functions_.find(addr) != internal_->functions_.end();
+  return functions().find(addr) != functions().end();
 }
 
 u32
 FunctionManager::AddressByName(std::string name)
 {
-  if (internal_->mapNameToAddress_.find(name) == internal_->mapNameToAddress_.end()) {
+  if (mapNameToAddress().find(name) == mapNameToAddress().end()) {
     return 0;
   }
-  return internal_->mapNameToAddress_[name];
+  return mapNameToAddress()[name];
 }
 
 void
 FunctionManager::RegisterNameToAddress(std::string name, u32 addr)
 {
-  internal_->mapNameToAddress_.insert(std::make_pair(name, addr));
+  mapNameToAddress().insert(std::make_pair(name, addr));
 }
 
 MapAddressToFunction::iterator FunctionManager::FNBegin()
 {
-  return internal_->functions_.begin();
+  return functions().begin();
 }
 
 MapAddressToFunction::iterator FunctionManager::FNEnd()
 {
-  return internal_->functions_.end();
+  return functions().end();
 }

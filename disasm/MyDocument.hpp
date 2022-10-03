@@ -11,12 +11,23 @@
 #include "UseDef.hpp"
 #include "BBTraceParser.hpp"
 
+#include "Core/Debugger/SymbolMap.h"
+
 //--- MyDocument ---
 
 typedef std::vector<const char *> FuncArgTypes;
 
-class MyDocumentInternal;
+class MemoryDump {
+public:
+  MemoryDump();
+  ~MemoryDump();
+  void Allocate(size_t length);
 
+	u8* data_;
+  size_t length_;
+};
+
+// --- MyHLEFunction ---
 class MyHLEFunction {
 public:
 	std::string name;
@@ -25,6 +36,8 @@ public:
   FuncArgTypes argmask;
   u32 flags;
 };
+
+// --- MyHLEModule ---
 
 struct MyHLEModule {
 public:
@@ -41,6 +54,7 @@ struct DisasmParam {
   u32 last_addr;
 };
 
+// --- MyDocument ---
 class MyDocument {
 public:
   MyDocument();
@@ -68,7 +82,6 @@ public:
   InstructionManager instrManager_;
   FunctionManager funcManager_;
 
-  MyDocumentInternal* internal() { return internal_; }
   size_t MemorySize();
   u8*  MemoryPtr();
   u32   MemoryStart();
@@ -85,8 +98,18 @@ public:
   int PseuDoNothing(MyInstruction *instr);
   int PseudoSyscall(MyInstruction *instr);
 
+  const char* GetFuncName(int moduleIndex, int func);
+  MyHLEFunction *GetFunc(std::string fullname);
+
+  SymbolMap& symbol_map() { return symbol_map_; }
+  MemoryDump& buf() { return buf_; }
+  UseDefAnalyzer& useDefAnalyzer() { return useDefAnalyzer_; }
 private:
-  MyDocumentInternal *internal_;
+  SymbolMap symbol_map_;
+  HLEModules moduleDB_;
+  MemoryDump buf_;
+  u32 memory_start_;
+  UseDefAnalyzer useDefAnalyzer_;
 
   u32 entry_addr_;
   std::string entry_name_;

@@ -2,9 +2,8 @@
 #include <sstream>
 
 #include "Core/MIPS/MIPSDebugInterface.h"
-
+#include "MyDocument.hpp"
 #include "Pseudo.hpp"
-#include "MyDocument_internal.hpp"
 
 struct PseudoTableRow {
   const char *mnemonic;
@@ -241,7 +240,7 @@ int MyDocument::PseuDoJump(MyInstruction *instr)
 }
 
 int MyDocument::PseudoSyscall(MyInstruction *instr) {
-  MyHLEFunction *hlefun = internal_->GetFunc(instr->arguments_[0].Str());
+  MyHLEFunction *hlefun = GetFunc(instr->arguments_[0].Str());
   if (hlefun) {
     std::cout << '\t';
     if (hlefun->retmask.size() > 0) {

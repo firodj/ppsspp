@@ -11,8 +11,7 @@
 #include "Core/MIPS/MIPSAnalyst.h"
 //#include "Core/MemMap.h"
 //#include "Yaml.hpp"
-
-#include "MyDocument_internal.hpp"
+#include "MyDocument.hpp"
 
 MyDocument* g_currentDocument = nullptr;
 
@@ -31,7 +30,7 @@ const char* GetFuncName(int moduleIndex, int func) {
     std::cout << "ERRROR\tGetFuncName\tcurrentDocument is not set" << std::endl;
     return nullptr;
   }
-	return g_currentDocument->internal()->GetFuncName(moduleIndex, func);
+	return g_currentDocument->GetFuncName(moduleIndex, func);
 }
 
 // Common/StringUtils

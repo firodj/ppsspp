@@ -5,7 +5,7 @@
 #include "UseDef.hpp"
 #include "BasicBlock.hpp"
 #include "MyInstruction.hpp"
-#include "MyDocument_internal.hpp"
+#include "MyDocument.hpp"
 
 struct UseDefTableRow {
   const char *mnemonic;
@@ -210,7 +210,7 @@ void UseDefAnalyzer::DoAllUse(UseDefManager &mgr, MyInstruction *instr) {
 
 void UseDefAnalyzer::DoSysCall(UseDefManager &mgr, MyInstruction *instr)
 {
-  MyHLEFunction *hlefun = doc_->internal()->GetFunc(instr->arguments_[0].Str());
+  MyHLEFunction *hlefun = doc_->GetFunc(instr->arguments_[0].Str());
   for (int ret_i = 0; ret_i < hlefun->retmask.size() && ret_i < 2; ret_i++) {
     mgr.AddDef(currentDebugMIPS->GetRegName(0, 2 + ret_i), instr, -1);
   }

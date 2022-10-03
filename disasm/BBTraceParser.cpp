@@ -5,7 +5,7 @@
 #include <queue>
 
 #include "Types.hpp"
-#include "MyDocument_internal.hpp"
+#include "MyDocument.hpp"
 
 #include "BBTraceParser.hpp"
 #include "Core/BBTrace.h"
