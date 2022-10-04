@@ -1,14 +1,96 @@
 package bridge
 
-import "fmt"
-
 // #cgo CFLAGS: -I${INCLUDE_PATH}
-// #cgo LDFLAGS: ${LIBRARY_PATH}
+// #cgo LDFLAGS: ${LIBRARY_PATH} -lstdc++
 // #include <go_bridge.h>
 import "C"
+import (
+	"fmt"
+	"unsafe"
+)
 
-func Run() {
-  fmt.Printf("Invoking c library...\n")
-  C.xgox(10)
-  fmt.Printf("Done\n")
+type StdCVector[T any] interface {
+  Size() int
+  At(int) T
+}
+
+type ArrayOfHLEModule struct {
+  doc *Document
+}
+
+func (p *ArrayOfHLEModule) Size() int {
+  return int(C.DocumentSizeOfHLEModules(p.doc.ptr))
+}
+
+func (p *ArrayOfHLEModule) At(idx int) *HLEModule {
+  ptr := C.DocumentHLEModuleAt(p.doc.ptr, C.int(idx))
+  if ptr == nil {
+    return nil
+  }
+  return &HLEModule {
+    ptr: ptr,
+  }
+}
+
+type HLEModule struct {
+  ptr C.HLEModule
+}
+
+func (modl *HLEModule) GetName() string {
+  s := C.HLEModuleGetName(modl.ptr)
+  return C.GoString(s)
+}
+
+type Document struct {
+  ptr C.Document
+  HLEModules StdCVector[*HLEModule]
+}
+
+type Instruction struct {
+  ptr C.Instruction
+}
+
+
+func NewDocument(path string, load_analyzed bool) *Document {
+  ptr := C.NewDocument()
+  if ptr == nil {
+    return nil
+  }
+  doc := &Document{
+    ptr: ptr,
+  }
+  _path := C.CString(path)
+  defer C.free(unsafe.Pointer(_path))
+  _load_analyzed := C.int(0)
+  if load_analyzed {
+    _load_analyzed = C.int(1)
+  }
+  res := C.DocumentInit(ptr, _path, _load_analyzed)
+  if res != 0 {
+    fmt.Println("something error on C.DocumentInit")
+  }
+  doc.HLEModules = &ArrayOfHLEModule{
+    doc: doc,
+  }
+  return doc
+}
+
+func (doc *Document) Delete() {
+  C.DeleteDocument(doc.ptr)
+  doc.ptr = nil
+}
+
+func (doc *Document) Disasm(addr uint32) *Instruction {
+  ptr := C.DocumentDisasm(doc.ptr, C.uint32_t(addr))
+  if ptr == nil {
+    return nil
+  }
+  return &Instruction{
+    ptr: ptr,
+  }
+}
+
+func (instr *Instruction) AsString() string {
+  s := C.InstructionAsString(instr.ptr)
+  return C.GoString(s)
 }

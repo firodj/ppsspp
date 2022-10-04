@@ -45,7 +45,7 @@ public:
 	std::vector<MyHLEFunction> funcs;
 };
 
-typedef std::vector<MyHLEModule> HLEModules;
+typedef std::vector<MyHLEModule> MyHLEModules;
 
 struct DisasmParam {
   u32 bb_addr;
@@ -85,7 +85,7 @@ public:
   size_t MemorySize();
   u8*  MemoryPtr();
   u32   MemoryStart();
-  HLEModules &hleModules();
+  MyHLEModules &hleModules();
 
   u32 entry_addr() { return entry_addr_; }
   std::string &entry_name() { return entry_name_; }
@@ -106,7 +106,7 @@ public:
   UseDefAnalyzer& useDefAnalyzer() { return useDefAnalyzer_; }
 private:
   SymbolMap symbol_map_;
-  HLEModules moduleDB_;
+  MyHLEModules moduleDB_;
   MemoryDump buf_;
   u32 memory_start_;
   UseDefAnalyzer useDefAnalyzer_;

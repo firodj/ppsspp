@@ -16,6 +16,7 @@
 #include "MyDocument.hpp"
 
 #include "go_bridge.h"
+#include "defer.hpp"
 
 void testSyscall(MyDocument &doc) {
 	auto inst = doc.Disasm(0x8A38A70);
@@ -25,8 +26,11 @@ void testSyscall(MyDocument &doc) {
 }
 
 void testJump(MyDocument &doc) {
-	auto inst = doc.Disasm(0x8804140);
-	std::cout << inst->AsString() << std::endl;
+	Document ptrDoc = reinterpret_cast<Document>(&doc);
+
+	uint32_t addr = 0x8804140;
+	Instruction rawInstr = DocumentDisasm(ptrDoc, addr); //auto instr = doc.Disasm(addr);
+	std::cout << InstructionAsString(rawInstr) << std::endl;	// instr->AsString()
 }
 
 void testBBTrace(MyDocument &doc) {
@@ -87,8 +91,12 @@ int main(int argc, char *argv[])
 #endif
 	std::string path = env_p;
 
-	MyDocument myDoc;
-	myDoc.Init(path + "/Sora", true);
+	Document ptrDoc = NewDocument();
+	defer(DeleteDocument(ptrDoc));
+	path += "/Sora";
+	DocumentInit(ptrDoc, path.c_str(), true); //myDoc.Init(path, true);
+
+	MyDocument &myDoc  = *reinterpret_cast<MyDocument*>(ptrDoc);
 
 	if (action_name == "tes") {
 		MyArgument arg1, arg2;
@@ -103,10 +111,12 @@ int main(int argc, char *argv[])
 		testJump(myDoc);
 		testSyscall(myDoc);
 	} else if (action_name == "hle") {
-		std::cout << "HLE Modules:" << myDoc.hleModules().size() << std::endl;
-		int idx = 0;
-		for (auto &hle: myDoc.hleModules()) {
-			std::cout << idx << ":" << hle.name << std::endl;
+		int maxIdx = DocumentSizeOfHLEModules(ptrDoc);
+		std::cout << "HLE Modules:" << maxIdx  << std::endl; // myDoc.hleModules().size()
+		for (int idx = 0; idx < maxIdx; idx++)
+		{
+			HLEModule ptrModule = DocumentHLEModuleAt(ptrDoc, idx);
+			std::cout << idx << ":" << HLEModuleGetName(ptrModule) << std::endl;
 			idx++;
 		}
 	} else if (action_name == "funcs") {
@@ -118,7 +128,7 @@ int main(int argc, char *argv[])
 		testBBTrace(myDoc);
 	} else if (action_name == "bbtraceanal") {
 		MyDocument myDoc2;
-		myDoc2.Init(path + "/Sora", false);
+		myDoc2.Init(path, false);
 
 		std::string n_value;
 		int n = 20;
@@ -130,7 +140,7 @@ int main(int argc, char *argv[])
 			BBTraceParser::ParsingBB(myDoc2.bbtrace_parser_, par);
 		}, n);
 		myDoc2.bbtrace_parser_.EndParsing();
-		myDoc2.SaveAnalyzed(path + "/Sora");
+		myDoc2.SaveAnalyzed(path);
 		std::cout << "Store BBs:" << std::dec << myDoc2.bbManager_.BBCount() << std::endl;
     std::cout << "Parse: " << std::dec << myDoc2.bbtrace_parser_.nts() << std::endl;
 

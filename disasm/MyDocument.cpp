@@ -89,7 +89,7 @@ u8* MyDocument::MemoryPtr() { return buf_.data_; }
 
 u32 MyDocument::MemoryStart() { return memory_start_;  }
 
-HLEModules &MyDocument::hleModules() { return moduleDB_; }
+MyHLEModules &MyDocument::hleModules() { return moduleDB_; }
 
 MyDocument::MyDocument(): bbtrace_parser_(this), memory_start_(0),
   useDefAnalyzer_(this) {

@@ -31,7 +31,7 @@ set(DisasmSource
 	BBTraceParser.hpp
 	FlameGraph.cpp
 	FlameGraph.hpp
-	go_bridge.c
+	go_bridge.cpp
 	include/go_bridge.h
 
 	../Core/Debugger/SymbolMap.cpp
@@ -84,12 +84,14 @@ target_include_directories(disasmlib
 	PUBLIC ${PROJECT_SOURCE_DIR}/..
 	PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(disasmlib PUBLIC cityhash)
+set(GOLIB $<TARGET_FILE:disasmlib>)
 
 # was: Common cityhash armips libzstd_static disasmlib
 set(DISASM_DEPEND_LIBS cityhash disasmlib)
 
 if(APPLE AND (NOT IOS))
 	set(DISASM_COMBINED_LIB ${CMAKE_BINARY_DIR}/libdisasm_combined.a)
+	set(GOLIB ${DISASM_COMBINED_LIB})
 
 	add_custom_target(disasm_combined
 	COMMAND libtool -static -o ${DISASM_COMBINED_LIB}
@@ -111,7 +113,7 @@ target_compile_features(disasm PUBLIC cxx_std_11)
 target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
 
 # Generate cgo wrapper
-add_custom_command(TARGET disasmlib
+add_custom_command(TARGET disasm
                    POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include $<TARGET_FILE:disasmlib>
+                   COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include ${GOLIB}
 )
