@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -10,12 +11,13 @@ import (
 
 type PSPSegment struct {
 	Addr uint32 `yaml:"addr"`
-	Size int `yaml:"size"`
+	Size int    `yaml:"size"`
 }
 
 type PSPNativeModule struct {
-	Name     string       `yaml:"name"`
-	Segments []PSPSegment `yaml:"segments"`
+	Name      string       `yaml:"name"`
+	Segments  []PSPSegment `yaml:"segments"`
+	EntryAddr uint32       `yaml:"entry_addr"`
 }
 
 type PSPModule struct {
@@ -26,9 +28,11 @@ type PSPModule struct {
 }
 
 type SoraFunction struct {
-	Name    string `yaml:"name"`
-	Address uint32 `yaml:"address"`
-	Size    int    `yaml:"size"`
+	Name        string   `yaml:"name"`
+	Address     uint32   `yaml:"address"`
+	Size        *uint32  `yaml:"size"`
+	LastAddress *uint32  `yaml:last_address"`
+	BBAddresses []uint32 `yaml:bb_addresses"`
 }
 
 type PSPHLEFunction struct {
@@ -48,7 +52,7 @@ type PSPHLEModule struct {
 type PSPLoadedModule struct {
 	Name     string `yaml:"name"`
 	Address  uint32 `yaml:"address"`
-	Size     int    `yaml:"size"`
+	Size     uint32 `yaml:"size"`
 	IsActive bool   `yaml:"isActive"`
 }
 
@@ -73,6 +77,9 @@ type SoraDocument struct {
 	// UseDef Analyzer
 	// SymbolMap
 	symmap *SymbolMap
+
+	mapAddrToFunc map[uint32]int
+	mapNameToFunc map[string]int
 }
 
 func (doc *SoraDocument) LoadYaml(filename string) error {
@@ -109,6 +116,8 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 
 	doc := &SoraDocument{
 		symmap: CreateSymbolMap(),
+		mapAddrToFunc: make(map[uint32]int),
+		mapNameToFunc: make(map[string]int),
 	}
 	GlobalSetSymbolMap(doc.symmap.ptr)
 	GlobalSetGetFuncNameFunc(doc.GetFuncName)
@@ -127,12 +136,39 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 		doc.symmap.AddModule(modl.Name, modl.Address, uint32(modl.Size))
 	}
 
+	for idx, fun := range doc.yaml.Functions {
+		if fun.LastAddress != nil {
+			fun.Size = new(uint32)
+			*fun.Size = *fun.LastAddress - fun.Address + 4
+		} else if fun.Size != nil {
+			fun.LastAddress = new(uint32)
+			*fun.LastAddress = fun.Address + *fun.Size - 4
+		}
+		doc.symmap.AddFunction(fun.Name, fun.Address, *fun.Size, -1)
+		doc.mapAddrToFunc[fun.Address] = idx
+		doc.mapNameToFunc[fun.Name] = idx
+	}
+
+	entryName := doc.symmap.GetLabelName(doc.yaml.Module.NM.EntryAddr);
+	fmt.Println(doc.yaml.Module.NM.EntryAddr)
+	if entryName != nil {
+		fmt.Println(*entryName)
+	}
+
 	return doc, err
 }
 
-func (doc *SoraDocument) GetFuncName(moduleIndex int, funcIndex int) *string {
-
-	return nil
+func (doc *SoraDocument) GetFuncName(moduleIndex int, funcIndex int) string {
+	if moduleIndex < len(doc.yaml.HLEModules) {
+		modl := &doc.yaml.HLEModules[moduleIndex]
+		if funcIndex < len(modl.Funcs) {
+			fun := &modl.Funcs[funcIndex]
+			return fmt.Sprintf("%s::%s", modl.Name, fun.Name)
+		} else {
+			return fmt.Sprintf("%s::func%x", modl.Name, funcIndex)
+		}
+	}
+	return fmt.Sprintf("HLE(%x,%x)", moduleIndex, funcIndex)
 }
 
 func (doc *SoraDocument) Delete() {

@@ -275,7 +275,7 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 	}
 
 	memory_start_ = root["memory"]["start"].As<u32>();
-	u32 memory_size = root["memory"]["start"].As<u32>();
+	u32 memory_size = root["memory"]["size"].As<u32>();
 	entry_addr_ = root["module"]["nm"]["entry_addr"].As<u32>();
 
 	buf_.Allocate(memory_size);
