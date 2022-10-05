@@ -72,7 +72,7 @@ type SoraDocument struct {
 	// MemoryDump
 	// UseDef Analyzer
 	// SymbolMap
-	symmap bridgeSymbolMap
+	symmap *SymbolMap
 }
 
 func (doc *SoraDocument) LoadYaml(filename string) error {
@@ -108,8 +108,9 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 	//anal_yaml := filepath.Join(path, "SoraAnalyzed.yaml")
 
 	doc := &SoraDocument{
-		symmap: NewSymbolMap(),
+		symmap: CreateSymbolMap(),
 	}
+	GlobalSetSymbolMap(doc.symmap.ptr)
 	GlobalSetGetFuncNameFunc(doc.GetFuncName)
 
 	err := doc.LoadYaml(main_yaml)
@@ -122,7 +123,9 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 		return nil, err
 	}
 
-	GlobalSetSymbolMap(doc.symmap)
+	for _, modl := range doc.yaml.LoadedModules {
+		doc.symmap.AddModule(modl.Name, modl.Address, uint32(modl.Size))
+	}
 
 	return doc, err
 }
@@ -137,5 +140,5 @@ func (doc *SoraDocument) Delete() {
 	GlobalSetGetFuncNameFunc(nil)
 	GlobalSetSymbolMap(nil)
 	GlobalSetMemoryBase(nil)
-	DeleteSymbolMap(doc.symmap)
+	doc.symmap.Delete()
 }

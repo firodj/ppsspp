@@ -4,7 +4,6 @@ package main
 // #cgo LDFLAGS: ${LIBRARY_PATH} -lstdc++
 /*
 #include <go_bridge.h>
-#include <stdio.h>
 
 char * bridgeGetFuncName(int moduleIndex, int funcIndex);
 */
@@ -90,6 +89,18 @@ func SymbolMap_AddFunction(symmap bridgeSymbolMap, name string, address uint32, 
     C.uint32_t(address),
     C.uint32_t(size),
     C.int(moduleIndex),
+  )
+}
+
+func SymbolMap_AddModule(symmap bridgeSymbolMap, name string, address uint32, size uint32) {
+  nameStr := C.CString(name)
+  defer C.free(unsafe.Pointer(nameStr))
+
+  C.SymbolMap_AddModule(
+    C.BridgeSymbolMap(symmap),
+    nameStr,
+    C.uint32_t(address),
+    C.uint32_t(size),
   )
 }
 

@@ -38,8 +38,13 @@ const char* SymbolMap_GetLabelName(BridgeSymbolMap sym, uint32_t address) {
 }
 
 void SymbolMap_AddFunction(BridgeSymbolMap sym, const char* name, uint32_t address, uint32_t size, int moduleIndex) {
-   auto _sym = reinterpret_cast<SymbolMap*>(sym);
-   _sym->AddFunction(name, address, size, moduleIndex);
+  auto _sym = reinterpret_cast<SymbolMap*>(sym);
+  _sym->AddFunction(name, address, size, moduleIndex);
+}
+
+void SymbolMap_AddModule(BridgeSymbolMap sym, const char *name, uint32_t address, uint32_t size) {
+  auto _sym = reinterpret_cast<SymbolMap*>(sym);
+  _sym->AddModule(name, address, size);
 }
 
 void GlobalSetSymbolMap(BridgeSymbolMap sym) {
@@ -49,4 +54,3 @@ void GlobalSetSymbolMap(BridgeSymbolMap sym) {
   auto _sym = reinterpret_cast<SymbolMap*>(sym);
   g_symbolMap = _sym;
 }
-
