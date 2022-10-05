@@ -1,0 +1,102 @@
+package main
+
+// #cgo CFLAGS: -I${INCLUDE_PATH}
+// #cgo LDFLAGS: ${LIBRARY_PATH} -lstdc++
+// #include <go_bridge.h>
+import "C"
+import (
+	"unsafe"
+)
+
+type bridgeSymbolMap C.BridgeSymbolMap
+type funcGetFuncName func(int, int) string
+
+var g_GetFuncName funcGetFuncName = nil
+var g_AllocatedCString []*C.char = nil
+var m sync.Mutex
+
+func FreeAllocatedCString() {
+  m.Lock()
+  defer m.Unlock()
+
+  for _, cstr := range g_AllocatedCString {
+    C.free(unsafe.Pointer(cstr))
+  }
+  g_AllocatedCString = nil
+}
+
+func AllocateCString(str string) *C.char {
+  m.Lock()
+  defer m.Unlock()
+
+  cstr := C.CString(str)
+  g_AllocatedCString = append(g_AllocatedCString, cstr)
+  return cstr
+}
+
+func GlobalSetMemoryBase(data []byte) {
+  C.GlobalSetMemoryBase(unsafe.Pointer(&data[0]))
+}
+
+func NewSymbolMap() bridgeSymbolMap {
+  return bridgeSymbolMap(C.NewSymbolMap())
+}
+
+func DeleteSymbolMap(symmap bridgeSymbolMap) {
+  C.DeleteSymbolMap(C.BridgeSymbolMap(symmap))
+}
+
+func SymbolMap_GetFunctionSize(symmap bridgeSymbolMap, startAddress uint32) uint32 {
+  return uint32(C.SymbolMap_GetFunctionSize(
+    C.BridgeSymbolMap(symmap), C.uint32_t(startAddress),
+  ))
+}
+
+func SymbolMap_GetFunctionStart(symmap bridgeSymbolMap, address uint32) uint32 {
+  return uint32(C.SymbolMap_GetFunctionStart(
+    C.BridgeSymbolMap(symmap), C.uint32_t(address),
+  ))
+}
+
+func SymbolMap_GetLabelName(symmap bridgeSymbolMap, address uint32) *string {
+  cstr := C.SymbolMap_GetLabelName(
+    C.BridgeSymbolMap(symmap), C.uint32_t(address),
+  )
+  if cstr == nil {
+    return nil
+  }
+  str := C.GoString(cstr)
+  return &str
+}
+
+func SymbolMap_AddFunction(symmap bridgeSymbolMap, name string, address uint32, size uint32, moduleIndex int) {
+  nameStr := C.CString(name)
+  defer C.free(unsafe.Pointer(nameStr))
+
+  C.SymbolMap_AddFunction(
+    C.BridgeSymbolMap(symmap),
+    nameStr,
+    C.uint32_t(address),
+    C.uint32_t(size),
+    C.int(moduleIndex),
+  )
+}
+
+func GlobalSetSymbolMap(symmap bridgeSymbolMap) {
+  C.GlobalSetSymbolMap(C.BridgeSymbolMap(symmap))
+}
+
+// export bridgeGetFuncName
+func bridgeGetFuncName(moduleIndex C.int, funcIndex C.int) *C.char {
+  if g_GetFuncName == nil {
+    fmt.Printf("WARNING:\tg_GetFuncName is nil")
+    return nil
+  }
+  str := g_GetFuncName(int(moduleIndex), int(funcIndex))
+  return AllocateCString(str)
+}
+
+func GlobalSetGetFuncNameFunc(fn funcGetFuncName) {
+  g_GetFuncName = fn
+  C.GlobalSetGetFuncNameFunc(C.GetFuncNameFunc(C.bridgeGetFuncName))
+}

@@ -3,25 +3,26 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int xgox(int y);
+extern char temp[256];
 
-typedef void* Document;
-typedef void* Instruction;
-typedef void* HLEModule;
+typedef void* BridgeSymbolMap;
+typedef const char* (*GetFuncNameFunc)(int moduleIndex, int func);
 
-Document NewDocument();
-void DeleteDocument(Document doc);
-int DocumentInit(Document doc, const char* path, int load_analyzed);
-Instruction DocumentDisasm(Document doc, uint32_t addr);
-const char* InstructionAsString(Instruction instr);
-int DocumentSizeOfHLEModules(Document doc);
-HLEModule DocumentHLEModuleAt(Document doc, int idx);
-const char* HLEModuleGetName(HLEModule modl);
+void GlobalSetMemoryBase(void *base);
+BridgeSymbolMap NewSymbolMap();
+void DeleteSymbolMap(BridgeSymbolMap sym);
+uint32_t SymbolMap_GetFunctionSize(BridgeSymbolMap sym, uint32_t startAddress);
+uint32_t SymbolMap_GetFunctionStart(BridgeSymbolMap sym, uint32_t address);
+const char* SymbolMap_GetLabelName(BridgeSymbolMap sym, uint32_t address);
+void SymbolMap_AddFunction(BridgeSymbolMap sym, const char* name, uint32_t address, uint32_t size, int moduleIndex);
+void GlobalSetSymbolMap(BridgeSymbolMap sym);
+void GlobalSetGetFuncNameFunc(GetFuncNameFunc func);
 
 #ifdef __cplusplus
 }

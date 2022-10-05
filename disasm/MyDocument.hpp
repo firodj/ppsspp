@@ -12,6 +12,9 @@
 #include "BBTraceParser.hpp"
 
 #include "Core/Debugger/SymbolMap.h"
+#include "go_bridge.h"
+
+void SetFuncGetFuncName(GetFuncNameFunc func, void* userdata);
 
 //--- MyDocument ---
 
@@ -98,7 +101,9 @@ public:
   int PseuDoNothing(MyInstruction *instr);
   int PseudoSyscall(MyInstruction *instr);
 
-  const char* GetFuncName(int moduleIndex, int func);
+  static const char* GetFuncName(int moduleIndex, int func);
+  static MyDocument* currentDoc;
+
   MyHLEFunction *GetFunc(std::string fullname);
 
   SymbolMap& symbol_map() { return symbol_map_; }

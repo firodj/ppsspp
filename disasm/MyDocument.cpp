@@ -25,8 +25,6 @@
 
 #include "Yaml_internal.hpp"
 
-extern MyDocument* g_currentDocument;
-
 //--- MemoryDump ---//
 
 MemoryDump::MemoryDump(): data_(nullptr), length_(0)
@@ -46,9 +44,10 @@ MemoryDump::Allocate(size_t length) {
 
 const char*
 MyDocument::GetFuncName(int moduleIndex, int func) {
+	MyDocument &self = *currentDoc;
 	static char temp[256] = { 0 };
-	if (moduleDB_.size() > moduleIndex) {
-		auto &mod = moduleDB_[moduleIndex];
+	if (self.moduleDB_.size() > moduleIndex) {
+		auto &mod = self.moduleDB_[moduleIndex];
 		if (mod.funcs.size() > func) {
 			auto &fun = mod.funcs[func];
 			sprintf(temp, "%s::%s", mod.name.c_str(), fun.name.c_str());
@@ -182,8 +181,8 @@ void ParseArgTypes(const char *mask, int n, FuncArgTypes &types) {
 }
 
 void MyDocument::Uninit() {
-	if (g_currentDocument == this) g_currentDocument = nullptr;
-	if (g_symbolMap == &symbol_map_) g_symbolMap = nullptr;
+	GlobalSetGetFuncNameFunc(nullptr);
+	GlobalSetSymbolMap(nullptr);
 }
 
 void LoadFunctionsFromYaml(MyDocument &self, Yaml::Node & node_functions) {
@@ -245,14 +244,9 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 
 	bbtrace_parser_.filename_ = bb_data;
 
-	if (g_symbolMap) {
-		std::cout << "WARNING:\tMyDocument::Init\tOverride g_symbolMap" << std::endl;
-	}
-	g_symbolMap = &symbol_map_;
-	if (g_currentDocument) {
-		std::cout << "WARNING:\tMyDocument::Init\tOverride g_currentDocument" << std::endl;
-	}
-	g_currentDocument = this;
+	currentDoc = this;
+	GlobalSetSymbolMap(reinterpret_cast<BridgeSymbolMap>(&symbol_map_));
+	GlobalSetGetFuncNameFunc(MyDocument::GetFuncName);
 
 	Yaml::Node root;
 	try
@@ -288,6 +282,7 @@ int MyDocument::Init(std::string path, bool load_analyzed)
 	std::ifstream bin(path_data, std::ios::binary);
 	bin.read((char*)buf_.data_, memory_size);
 	bin.close();
+
 	Memory::base = buf_.data_ - memory_start_;
 
 	Yaml::Node & node_modules = root["modules"];

@@ -113,7 +113,7 @@ target_compile_features(disasm PUBLIC cxx_std_11)
 target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
 
 # Generate cgo wrapper
-add_custom_command(TARGET disasm
+add_custom_command(TARGET disasm_combined
                    POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include ${GOLIB}
 )

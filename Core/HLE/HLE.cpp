@@ -931,8 +931,8 @@ void SoraDumpHLE() {
 			fprintf(f, "      - idx: %d:%d\n", modulenum, funcnum);
 			fprintf(f, "        nid: 0x%08x\n", func.ID);
 			fprintf(f, "        name: %s\n", func.name);
-			fprintf(f, "        argmask: %s\n", func.argmask);
-			fprintf(f, "        retmask: %c\n", func.retmask);
+			fprintf(f, "        argmask: \"%s\"\n", func.argmask);
+			fprintf(f, "        retmask: \"%c\"\n", func.retmask);
 			fprintf(f, "        flags: 0x%08x\n", func.flags);
 		}
 	}

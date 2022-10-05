@@ -1220,7 +1220,7 @@ void SoraDumpModule(PSPModule *module) {
 
 	auto modules = g_symbolMap->getAllModules();
 
-	fprintf(f, "modules:\n");
+	fprintf(f, "loaded_modules:\n");
 
 	for (auto m : modules) {
 		fprintf(f, "  - name: %s\n", m.name.c_str());
