@@ -2,14 +2,21 @@ package main
 
 // #cgo CFLAGS: -I${INCLUDE_PATH}
 // #cgo LDFLAGS: ${LIBRARY_PATH} -lstdc++
-// #include <go_bridge.h>
+/*
+#include <go_bridge.h>
+#include <stdio.h>
+
+char * bridgeGetFuncName(int moduleIndex, int funcIndex);
+*/
 import "C"
 import (
+	"fmt"
+	"sync"
 	"unsafe"
 )
 
 type bridgeSymbolMap C.BridgeSymbolMap
-type funcGetFuncName func(int, int) string
+type funcGetFuncName func(int, int) *string
 
 var g_GetFuncName funcGetFuncName = nil
 var g_AllocatedCString []*C.char = nil
@@ -35,6 +42,10 @@ func AllocateCString(str string) *C.char {
 }
 
 func GlobalSetMemoryBase(data []byte) {
+  if data == nil {
+    C.GlobalSetMemoryBase(nil)
+    return
+  }
   C.GlobalSetMemoryBase(unsafe.Pointer(&data[0]))
 }
 
@@ -86,14 +97,17 @@ func GlobalSetSymbolMap(symmap bridgeSymbolMap) {
   C.GlobalSetSymbolMap(C.BridgeSymbolMap(symmap))
 }
 
-// export bridgeGetFuncName
+//export bridgeGetFuncName
 func bridgeGetFuncName(moduleIndex C.int, funcIndex C.int) *C.char {
   if g_GetFuncName == nil {
     fmt.Printf("WARNING:\tg_GetFuncName is nil")
     return nil
   }
   str := g_GetFuncName(int(moduleIndex), int(funcIndex))
-  return AllocateCString(str)
+  if str == nil {
+    return nil
+  }
+  return AllocateCString(*str)
 }
 
 func GlobalSetGetFuncNameFunc(fn funcGetFuncName) {

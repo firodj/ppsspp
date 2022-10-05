@@ -9,8 +9,6 @@
 extern "C" {
 #endif
 
-extern char temp[256];
-
 typedef void* BridgeSymbolMap;
 typedef const char* (*GetFuncNameFunc)(int moduleIndex, int func);
 
