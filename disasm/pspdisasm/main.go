@@ -18,5 +18,7 @@ func main() {
 		fmt.Println(err)
 	}
 
+	doc.Disasm(doc.EntryAddr)
+
 	defer doc.Delete()
 }

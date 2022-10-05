@@ -12,7 +12,37 @@ extern "C" {
 typedef void* BridgeSymbolMap;
 typedef const char* (*GetFuncNameFunc)(int moduleIndex, int func);
 
-void GlobalSetMemoryBase(void *base);
+typedef struct {
+  uint32_t opcodeAddress;
+  uint32_t encodedOpcode;
+
+  // shared between branches and conditional moves
+  uint8_t isConditional;
+  uint8_t conditionMet;
+
+  // branches
+  uint32_t branchTarget;
+  uint8_t isBranch;
+  uint8_t isLinkedBranch;
+  uint8_t isLikelyBranch;
+  uint8_t isBranchToRegister;
+  int branchRegisterNum;
+  uint8_t hasDelaySlot;
+
+  // data access
+  uint8_t isDataAccess;
+  int dataSize;
+  uint32_t dataAddress;
+
+  uint8_t hasRelevantAddress;
+  uint32_t relevantAddress;
+
+  // dissasembly
+  char dizz[128];
+  char log[128];
+} BridgeMipsOpcodeInfo;
+
+void GlobalSetMemoryBase(void *base, uint32_t startAddress);
 BridgeSymbolMap NewSymbolMap();
 void DeleteSymbolMap(BridgeSymbolMap sym);
 uint32_t SymbolMap_GetFunctionSize(BridgeSymbolMap sym, uint32_t startAddress);
@@ -22,6 +52,8 @@ void SymbolMap_AddFunction(BridgeSymbolMap sym, const char* name, uint32_t addre
 void SymbolMap_AddModule(BridgeSymbolMap sym, const char *name, uint32_t address, uint32_t size);
 void GlobalSetSymbolMap(BridgeSymbolMap sym);
 void GlobalSetGetFuncNameFunc(GetFuncNameFunc func);
+int MemoryIsValidAddress(uint32_t address);
+BridgeMipsOpcodeInfo MIPSAnalystGetOpcodeInfo(uint32_t address);
 
 #ifdef __cplusplus
 }

@@ -15,11 +15,13 @@ import (
 )
 
 type bridgeSymbolMap C.BridgeSymbolMap
-type funcGetFuncName func(int, int) *string
+type bridgeMipsOpcodeInfo C.BridgeMipsOpcodeInfo
+type funcGetFuncName func(int, int) string
 
 var g_GetFuncName funcGetFuncName = nil
 var g_AllocatedCString []*C.char = nil
 var m sync.Mutex
+var g_memoryBase unsafe.Pointer = nil
 
 func FreeAllocatedCString() {
   m.Lock()
@@ -40,12 +42,20 @@ func AllocateCString(str string) *C.char {
   return cstr
 }
 
-func GlobalSetMemoryBase(data []byte) {
-  if data == nil {
-    C.GlobalSetMemoryBase(nil)
-    return
+func GlobalSetMemoryBase(data []byte, startAddress uint32) unsafe.Pointer {
+  g_oldMemoryBase := g_memoryBase
+  if g_oldMemoryBase != nil {
+    defer C.free(g_oldMemoryBase)
   }
-  C.GlobalSetMemoryBase(unsafe.Pointer(&data[0]))
+
+  if data == nil {
+    g_memoryBase = nil
+  } else {
+    g_memoryBase = C.CBytes(data)
+  }
+
+  C.GlobalSetMemoryBase(g_memoryBase, C.uint32_t(startAddress))
+  return g_memoryBase
 }
 
 func NewSymbolMap() bridgeSymbolMap {
@@ -115,13 +125,29 @@ func bridgeGetFuncName(moduleIndex C.int, funcIndex C.int) *C.char {
     return nil
   }
   str := g_GetFuncName(int(moduleIndex), int(funcIndex))
-  if str == nil {
+  if str == "" {
     return nil
   }
-  return AllocateCString(*str)
+  return AllocateCString(str)
 }
 
 func GlobalSetGetFuncNameFunc(fn funcGetFuncName) {
   g_GetFuncName = fn
-  C.GlobalSetGetFuncNameFunc(C.GetFuncNameFunc(C.bridgeGetFuncName))
+  if fn != nil {
+    C.GlobalSetGetFuncNameFunc(C.GetFuncNameFunc(C.bridgeGetFuncName))
+  } else {
+    C.GlobalSetGetFuncNameFunc(nil)
+  }
+}
+
+func MemoryIsValidAddress(address uint32) bool {
+  return C.MemoryIsValidAddress(C.uint32_t(address)) == 1
+}
+
+func MIPSAnalystGetOpcodeInfo(address uint32) bridgeMipsOpcodeInfo {
+  return bridgeMipsOpcodeInfo(C.MIPSAnalystGetOpcodeInfo(C.uint32_t(address)))
+}
+
+func MipsOpcodeInfoString(opcode_info bridgeMipsOpcodeInfo) (string, string) {
+  return C.GoString(&opcode_info.dizz[0]), C.GoString(&opcode_info.log[0])
 }

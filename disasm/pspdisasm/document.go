@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"unsafe"
 
 	"gopkg.in/yaml.v3"
 )
@@ -71,7 +72,7 @@ type SoraYaml struct {
 
 type SoraDocument struct {
 	yaml SoraYaml
-	buf []byte
+	buf  unsafe.Pointer
 	// HLEModules
 	// MemoryDump
 	// UseDef Analyzer
@@ -80,6 +81,8 @@ type SoraDocument struct {
 
 	mapAddrToFunc map[uint32]int
 	mapNameToFunc map[string]int
+
+	EntryAddr uint32
 }
 
 func (doc *SoraDocument) LoadYaml(filename string) error {
@@ -102,8 +105,7 @@ func (doc *SoraDocument) LoadMemory(filename string) error {
 	if err != nil {
 		return err
 	}
-	doc.buf = data
-	GlobalSetMemoryBase(doc.buf)
+	doc.buf = GlobalSetMemoryBase(data, doc.yaml.Memory.Start)
 
 	return nil
 }
@@ -149,7 +151,9 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 		doc.mapNameToFunc[fun.Name] = idx
 	}
 
-	entryName := doc.symmap.GetLabelName(doc.yaml.Module.NM.EntryAddr);
+	doc.EntryAddr = doc.yaml.Module.NM.EntryAddr
+
+	entryName := doc.symmap.GetLabelName(doc.EntryAddr);
 	fmt.Println(doc.yaml.Module.NM.EntryAddr)
 	if entryName != nil {
 		fmt.Println(*entryName)
@@ -175,6 +179,16 @@ func (doc *SoraDocument) Delete() {
 	FreeAllocatedCString()
 	GlobalSetGetFuncNameFunc(nil)
 	GlobalSetSymbolMap(nil)
-	GlobalSetMemoryBase(nil)
+	GlobalSetMemoryBase(nil, 0)
 	doc.symmap.Delete()
+}
+
+func (doc *SoraDocument) Disasm(address uint32) {
+	if !MemoryIsValidAddress(address) {
+		fmt.Println("invalid address")
+		return
+	}
+
+	opcode_info := MIPSAnalystGetOpcodeInfo(address)
+	fmt.Println(MipsOpcodeInfoString(opcode_info))
 }

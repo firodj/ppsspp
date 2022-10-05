@@ -1,15 +1,21 @@
 #include "go_bridge.h"
 
 #include "Core/MemMap.h"
+#include "Core/MIPS/MIPSDebugInterface.h"
 #include "Core/Debugger/SymbolMap.h"
+#include "Core/MIPS/MIPS.h"
+#include "Core/MIPS/MIPSTables.h"
+#include "Core/MIPS/MIPSAnalyst.h"
 
 #include <stdio.h>
 #include <iostream>
 #include <cstring>
 #include <string>
 
-void GlobalSetMemoryBase(void *base) {
-  Memory::base = (u8*)base;
+void GlobalSetMemoryBase(void *base, uint32_t startAddress) {
+  Memory::base = (u8*)base - startAddress;
+
+  printf("set Memory::base to 0x%x with startAddress:0x%x\n", base, startAddress);
 }
 
 BridgeSymbolMap NewSymbolMap() {
@@ -53,4 +59,47 @@ void GlobalSetSymbolMap(BridgeSymbolMap sym) {
 	}
   auto _sym = reinterpret_cast<SymbolMap*>(sym);
   g_symbolMap = _sym;
+}
+
+int MemoryIsValidAddress(uint32_t address) {
+  return Memory::IsValidAddress(address);
+}
+
+BridgeMipsOpcodeInfo MIPSAnalystGetOpcodeInfo(uint32_t address) {
+  MIPSAnalyst::MipsOpcodeInfo mips_info =
+		MIPSAnalyst::GetOpcodeInfo(currentDebugMIPS, address);
+
+  BridgeMipsOpcodeInfo ret = {
+    mips_info.opcodeAddress,
+    mips_info.encodedOpcode.encoding,
+
+    mips_info.isConditional,
+    mips_info.conditionMet,
+
+    mips_info.branchTarget,
+    mips_info.isBranch,
+    mips_info.isLinkedBranch,
+    mips_info.isLikelyBranch,
+    mips_info.isBranchToRegister,
+    mips_info.branchRegisterNum,
+    mips_info.hasDelaySlot,
+
+    mips_info.isDataAccess,
+    mips_info.dataSize,
+    mips_info.dataAddress,
+
+    mips_info.hasRelevantAddress,
+    mips_info.relevantAddress,
+  };
+
+  // Implemetation from: currentDebugMIPS->disasm(instr->addr, 4)
+	bool tabsToSpaces = false;
+  std::string encodingLog;
+  MIPSDisAsm(mips_info.encodedOpcode, mips_info.opcodeAddress, ret.dizz,
+	  tabsToSpaces, &encodingLog);
+
+  strncpy(ret.log, encodingLog.c_str(), 127);
+  ret.log[127] = '\0';
+
+  return ret;
 }
