@@ -18,6 +18,12 @@ func main() {
 		fmt.Println(err)
 	}
 
+	entryName := doc.GetLabelName(doc.EntryAddr)
+	fmt.Println(doc.yaml.Module.NM.EntryAddr)
+	if entryName != nil {
+		fmt.Println(*entryName)
+	}
+
 	doc.Disasm(doc.EntryAddr)
 
 	defer doc.Delete()

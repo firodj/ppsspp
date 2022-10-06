@@ -15,7 +15,6 @@ import (
 )
 
 type bridgeSymbolMap C.BridgeSymbolMap
-type bridgeMipsOpcodeInfo C.BridgeMipsOpcodeInfo
 type funcGetFuncName func(int, int) string
 
 var g_GetFuncName funcGetFuncName = nil
@@ -144,10 +143,31 @@ func MemoryIsValidAddress(address uint32) bool {
   return C.MemoryIsValidAddress(C.uint32_t(address)) == 1
 }
 
-func MIPSAnalystGetOpcodeInfo(address uint32) bridgeMipsOpcodeInfo {
-  return bridgeMipsOpcodeInfo(C.MIPSAnalystGetOpcodeInfo(C.uint32_t(address)))
+func MIPSAnalystGetOpcodeInfo(address uint32) *MipsOpcode {
+  opcode := C.MIPSAnalystGetOpcodeInfo(C.uint32_t(address))
+
+  return &MipsOpcode{
+    Address: uint32(opcode.opcodeAddress),
+    Encoded: uint32(opcode.encodedOpcode),
+
+    IsConditional:      opcode.isConditional ==  1,
+    IsConditionMet:     opcode.conditionMet == 1,
+    IsBranch:           opcode.isBranch == 1,
+    IsLinkedBranch:     opcode.isLinkedBranch == 1,
+    IsLikelyBranch:     opcode.isLikelyBranch == 1,
+    IsBranchToRegister: opcode.isBranchToRegister == 1,
+    HasDelaySlot:       opcode.hasDelaySlot == 1,
+    IsDataAccess:       opcode.isDataAccess == 1,
+    HasRelevantAddress: opcode.hasRelevantAddress == 1,
+
+    BranchTarget:       uint32(opcode.branchTarget),
+    BranchRegister:     int(opcode.branchRegisterNum),
+    DataSize:           int(opcode.dataSize),
+    DataAddress:        uint32(opcode.dataAddress),
+    RelevantAddress:    uint32(opcode.relevantAddress),
+
+    Dizz: C.GoString(&opcode.dizz[0]),
+    Log:  C.GoString(&opcode.log[0]),
+  }
 }
 
-func MipsOpcodeInfoString(opcode_info bridgeMipsOpcodeInfo) (string, string) {
-  return C.GoString(&opcode_info.dizz[0]), C.GoString(&opcode_info.log[0])
-}

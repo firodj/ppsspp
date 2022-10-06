@@ -70,6 +70,27 @@ type SoraYaml struct {
 	HLEModules    []PSPHLEModule    `yaml:"hle_modules"`
 }
 
+type MipsOpcode struct {
+	Address            uint32
+	Encoded            uint32
+	IsConditional      bool
+	IsConditionMet     bool
+	IsBranch           bool
+	IsLinkedBranch     bool
+	IsLikelyBranch     bool
+	IsBranchToRegister bool
+	HasDelaySlot       bool
+	IsDataAccess       bool
+	HasRelevantAddress bool
+	BranchTarget       uint32
+	BranchRegister     int
+	DataSize           int
+	DataAddress        uint32
+	RelevantAddress    uint32
+	Dizz               string
+	Log                string
+}
+
 type SoraDocument struct {
 	yaml SoraYaml
 	buf  unsafe.Pointer
@@ -80,7 +101,7 @@ type SoraDocument struct {
 	symmap *SymbolMap
 
 	mapAddrToFunc map[uint32]int
-	mapNameToFunc map[string]int
+	mapNameToFunc map[string][]int
 
 	EntryAddr uint32
 }
@@ -119,10 +140,10 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 	doc := &SoraDocument{
 		symmap: CreateSymbolMap(),
 		mapAddrToFunc: make(map[uint32]int),
-		mapNameToFunc: make(map[string]int),
+		mapNameToFunc: make(map[string][]int),
 	}
 	GlobalSetSymbolMap(doc.symmap.ptr)
-	GlobalSetGetFuncNameFunc(doc.GetFuncName)
+	GlobalSetGetFuncNameFunc(doc.GetHLEFuncName)
 
 	err := doc.LoadYaml(main_yaml)
 	if err != nil {
@@ -146,23 +167,74 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 			fun.LastAddress = new(uint32)
 			*fun.LastAddress = fun.Address + *fun.Size - 4
 		}
-		doc.symmap.AddFunction(fun.Name, fun.Address, *fun.Size, -1)
-		doc.mapAddrToFunc[fun.Address] = idx
-		doc.mapNameToFunc[fun.Name] = idx
+
+		doc.RegisterExistingFunction(idx)
 	}
 
 	doc.EntryAddr = doc.yaml.Module.NM.EntryAddr
 
-	entryName := doc.symmap.GetLabelName(doc.EntryAddr);
-	fmt.Println(doc.yaml.Module.NM.EntryAddr)
-	if entryName != nil {
-		fmt.Println(*entryName)
-	}
-
 	return doc, err
 }
 
-func (doc *SoraDocument) GetFuncName(moduleIndex int, funcIndex int) string {
+func (doc *SoraDocument) GetLabelName(addr uint32) *string {
+	return doc.symmap.GetLabelName(addr)
+}
+
+func (doc *SoraDocument) RegisterNameFunction(idx int) {
+	fun := &doc.yaml.Functions[idx]
+
+	if _, ok := doc.mapNameToFunc[fun.Name]; !ok {
+		doc.mapNameToFunc[fun.Name] = make([]int, 0)
+	}
+
+	for _, exidx := range doc.mapNameToFunc[fun.Name] {
+		if exidx == idx {
+			return
+		}
+	}
+
+	doc.mapNameToFunc[fun.Name] = append(doc.mapNameToFunc[fun.Name], idx)
+}
+
+func (doc *SoraDocument) RegisterExistingFunction(idx int)  {
+	fun := &doc.yaml.Functions[idx]
+
+	doc.symmap.AddFunction(fun.Name, fun.Address, *fun.Size, -1)
+
+	doc.mapAddrToFunc[fun.Address] = idx
+
+	doc.RegisterNameFunction(idx)
+}
+
+func (doc *SoraDocument) CreateNewFunction(addr uint32, last_addr uint32) int {
+	if _, ok := doc.mapAddrToFunc[addr]; ok {
+		fmt.Printf("WARNING:\tduplicate address CreateNewFunction addr:0x%08x\n", addr);
+		return -1
+	}
+
+	idx := len(doc.yaml.Functions)
+
+	doc.yaml.Functions = append(doc.yaml.Functions, SoraFunction{
+		Address: addr,
+		Name: fmt.Sprintf("z_un_%08x", addr),
+		LastAddress: new(uint32),
+		Size: new(uint32),
+	})
+
+	fun := &doc.yaml.Functions[idx]
+	*fun.LastAddress = last_addr
+	*fun.Size = *fun.LastAddress - fun.Address + 4
+
+  doc.symmap.AddFunction(fun.Name, fun.Address, *fun.Size, -1)
+
+	doc.mapAddrToFunc[fun.Address] = idx
+
+	doc.RegisterNameFunction(idx)
+
+	return idx
+}
+
+func (doc *SoraDocument) GetHLEFuncName(moduleIndex int, funcIndex int) string {
 	if moduleIndex < len(doc.yaml.HLEModules) {
 		modl := &doc.yaml.HLEModules[moduleIndex]
 		if funcIndex < len(modl.Funcs) {
@@ -190,5 +262,9 @@ func (doc *SoraDocument) Disasm(address uint32) {
 	}
 
 	opcode_info := MIPSAnalystGetOpcodeInfo(address)
-	fmt.Println(MipsOpcodeInfoString(opcode_info))
+	fmt.Println(opcode_info.Dizz)
+}
+
+func (doc *SoraDocument) ProcessAnalyzedFunc(idx int) {
+
 }
