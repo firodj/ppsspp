@@ -140,7 +140,8 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 		doc.symmap.AddModule(modl.Name, modl.Address, uint32(modl.Size))
 	}
 
-	for idx, fun := range doc.yaml.Functions {
+	for idx := range doc.yaml.Functions {
+		fun := &doc.yaml.Functions[idx]
 		if fun.LastAddress != nil {
 			fun.Size = new(uint32)
 			*fun.Size = *fun.LastAddress - fun.Address + 4

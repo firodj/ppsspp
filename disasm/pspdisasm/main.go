@@ -28,7 +28,7 @@ func main() {
 
 	doc.Disasm(doc.EntryAddr)
 	idx, funStart := doc.GetFunctionByAddress(doc.EntryAddr)
-	fmt.Println(funStart.Name)
+	fmt.Println(funStart.Name, funStart.Address, funStart.Size, funStart.LastAddress)
 	anal := internal.NewFunctionAnalyzer(doc, idx)
 	anal.Process()
 
