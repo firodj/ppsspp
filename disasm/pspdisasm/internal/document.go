@@ -236,16 +236,25 @@ func (doc *SoraDocument) Delete() {
 	doc.symmap.Delete()
 }
 
-func (doc *SoraDocument) Disasm(address uint32) {
+func (doc *SoraDocument) Disasm(address uint32) *bridge.MipsOpcode {
 	if !bridge.MemoryIsValidAddress(address) {
 		fmt.Println("invalid address")
-		return
+		return nil
 	}
 
-	opcode_info := bridge.MIPSAnalystGetOpcodeInfo(address)
-	fmt.Println(opcode_info.Dizz)
+	return bridge.MIPSAnalystGetOpcodeInfo(address)
 }
 
-func (doc *SoraDocument) ProcessAnalyzedFunc(idx int) {
+func (doc *SoraDocument) GetFunctionByAddress(address uint32) (int, *SoraFunction)  {
+	if idx, ok := doc.mapAddrToFunc[address]; ok {
+		return idx, &doc.yaml.Functions[idx]
+	}
+	return -1, nil
+}
 
+func (doc *SoraDocument) GetFunctionByIndex(idx int) *SoraFunction {
+	if idx < 0 || idx >= len(doc.yaml.Functions) {
+		return nil
+	}
+	return &doc.yaml.Functions[idx]
 }
