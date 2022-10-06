@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+
+	"github.com/firodj/ppsspp/disasm/pspdisasm/internal"
 )
 
 func main() {
@@ -13,13 +15,13 @@ func main() {
 	}
 	fmt.Println(home)
 
-	doc, err := NewSoraDocument(home + "/Sora", true)
+	doc, err := internal.NewSoraDocument(home + "/Sora", true)
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	entryName := doc.GetLabelName(doc.EntryAddr)
-	fmt.Println(doc.yaml.Module.NM.EntryAddr)
+	fmt.Println(doc.EntryAddr)
 	if entryName != nil {
 		fmt.Println(*entryName)
 	}

@@ -1,4 +1,4 @@
-package main
+package bridge
 
 // #cgo CFLAGS: -I${INCLUDE_PATH}
 // #cgo LDFLAGS: ${LIBRARY_PATH} -lstdc++
@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-type bridgeSymbolMap C.BridgeSymbolMap
+type CSymbolMap C.BridgeSymbolMap
 type funcGetFuncName func(int, int) string
 
 var g_GetFuncName funcGetFuncName = nil
@@ -57,27 +57,27 @@ func GlobalSetMemoryBase(data []byte, startAddress uint32) unsafe.Pointer {
   return g_memoryBase
 }
 
-func NewSymbolMap() bridgeSymbolMap {
-  return bridgeSymbolMap(C.NewSymbolMap())
+func NewSymbolMap() CSymbolMap {
+  return CSymbolMap(C.NewSymbolMap())
 }
 
-func DeleteSymbolMap(symmap bridgeSymbolMap) {
+func DeleteSymbolMap(symmap CSymbolMap) {
   C.DeleteSymbolMap(C.BridgeSymbolMap(symmap))
 }
 
-func SymbolMap_GetFunctionSize(symmap bridgeSymbolMap, startAddress uint32) uint32 {
+func SymbolMap_GetFunctionSize(symmap CSymbolMap, startAddress uint32) uint32 {
   return uint32(C.SymbolMap_GetFunctionSize(
     C.BridgeSymbolMap(symmap), C.uint32_t(startAddress),
   ))
 }
 
-func SymbolMap_GetFunctionStart(symmap bridgeSymbolMap, address uint32) uint32 {
+func SymbolMap_GetFunctionStart(symmap CSymbolMap, address uint32) uint32 {
   return uint32(C.SymbolMap_GetFunctionStart(
     C.BridgeSymbolMap(symmap), C.uint32_t(address),
   ))
 }
 
-func SymbolMap_GetLabelName(symmap bridgeSymbolMap, address uint32) *string {
+func SymbolMap_GetLabelName(symmap CSymbolMap, address uint32) *string {
   cstr := C.SymbolMap_GetLabelName(
     C.BridgeSymbolMap(symmap), C.uint32_t(address),
   )
@@ -88,7 +88,7 @@ func SymbolMap_GetLabelName(symmap bridgeSymbolMap, address uint32) *string {
   return &str
 }
 
-func SymbolMap_AddFunction(symmap bridgeSymbolMap, name string, address uint32, size uint32, moduleIndex int) {
+func SymbolMap_AddFunction(symmap CSymbolMap, name string, address uint32, size uint32, moduleIndex int) {
   nameStr := C.CString(name)
   defer C.free(unsafe.Pointer(nameStr))
 
@@ -101,7 +101,7 @@ func SymbolMap_AddFunction(symmap bridgeSymbolMap, name string, address uint32, 
   )
 }
 
-func SymbolMap_AddModule(symmap bridgeSymbolMap, name string, address uint32, size uint32) {
+func SymbolMap_AddModule(symmap CSymbolMap, name string, address uint32, size uint32) {
   nameStr := C.CString(name)
   defer C.free(unsafe.Pointer(nameStr))
 
@@ -113,7 +113,7 @@ func SymbolMap_AddModule(symmap bridgeSymbolMap, name string, address uint32, si
   )
 }
 
-func GlobalSetSymbolMap(symmap bridgeSymbolMap) {
+func GlobalSetSymbolMap(symmap CSymbolMap) {
   C.GlobalSetSymbolMap(C.BridgeSymbolMap(symmap))
 }
 

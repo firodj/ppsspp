@@ -5,4 +5,4 @@ SET(INCLUDE_PATH "${CMAKE_ARGV4}")
 SET(LIBRARY_PATH "${CMAKE_ARGV5}")
 
 message("${LIBRARY_PATH} ${INCLUDE_PATH}")
-configure_file(${HERE}/pspdisasm/bridge.go.in ${HERE}/pspdisasm/bridge.go)
+configure_file(${HERE}/pspdisasm/bridge/bridge.go.in ${HERE}/pspdisasm/bridge/bridge.go)

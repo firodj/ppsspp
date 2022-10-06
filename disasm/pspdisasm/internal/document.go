@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -7,6 +7,8 @@ import (
 	"unsafe"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/firodj/ppsspp/disasm/pspdisasm/bridge"
 )
 
 
@@ -70,27 +72,6 @@ type SoraYaml struct {
 	HLEModules    []PSPHLEModule    `yaml:"hle_modules"`
 }
 
-type MipsOpcode struct {
-	Address            uint32
-	Encoded            uint32
-	IsConditional      bool
-	IsConditionMet     bool
-	IsBranch           bool
-	IsLinkedBranch     bool
-	IsLikelyBranch     bool
-	IsBranchToRegister bool
-	HasDelaySlot       bool
-	IsDataAccess       bool
-	HasRelevantAddress bool
-	BranchTarget       uint32
-	BranchRegister     int
-	DataSize           int
-	DataAddress        uint32
-	RelevantAddress    uint32
-	Dizz               string
-	Log                string
-}
-
 type SoraDocument struct {
 	yaml SoraYaml
 	buf  unsafe.Pointer
@@ -126,7 +107,7 @@ func (doc *SoraDocument) LoadMemory(filename string) error {
 	if err != nil {
 		return err
 	}
-	doc.buf = GlobalSetMemoryBase(data, doc.yaml.Memory.Start)
+	doc.buf = bridge.GlobalSetMemoryBase(data, doc.yaml.Memory.Start)
 
 	return nil
 }
@@ -142,8 +123,8 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 		mapAddrToFunc: make(map[uint32]int),
 		mapNameToFunc: make(map[string][]int),
 	}
-	GlobalSetSymbolMap(doc.symmap.ptr)
-	GlobalSetGetFuncNameFunc(doc.GetHLEFuncName)
+	bridge.GlobalSetSymbolMap(doc.symmap.ptr)
+	bridge.GlobalSetGetFuncNameFunc(doc.GetHLEFuncName)
 
 	err := doc.LoadYaml(main_yaml)
 	if err != nil {
@@ -248,20 +229,20 @@ func (doc *SoraDocument) GetHLEFuncName(moduleIndex int, funcIndex int) string {
 }
 
 func (doc *SoraDocument) Delete() {
-	FreeAllocatedCString()
-	GlobalSetGetFuncNameFunc(nil)
-	GlobalSetSymbolMap(nil)
-	GlobalSetMemoryBase(nil, 0)
+	bridge.FreeAllocatedCString()
+	bridge.GlobalSetGetFuncNameFunc(nil)
+	bridge.GlobalSetSymbolMap(nil)
+	bridge.GlobalSetMemoryBase(nil, 0)
 	doc.symmap.Delete()
 }
 
 func (doc *SoraDocument) Disasm(address uint32) {
-	if !MemoryIsValidAddress(address) {
+	if !bridge.MemoryIsValidAddress(address) {
 		fmt.Println("invalid address")
 		return
 	}
 
-	opcode_info := MIPSAnalystGetOpcodeInfo(address)
+	opcode_info := bridge.MIPSAnalystGetOpcodeInfo(address)
 	fmt.Println(opcode_info.Dizz)
 }
 
