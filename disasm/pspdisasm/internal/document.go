@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/firodj/ppsspp/disasm/pspdisasm/bridge"
+	"github.com/firodj/ppsspp/disasm/pspdisasm/models"
 )
 
 
@@ -237,7 +238,7 @@ func (doc *SoraDocument) Delete() {
 	doc.symmap.Delete()
 }
 
-func (doc *SoraDocument) Disasm(address uint32) *bridge.MipsOpcode {
+func (doc *SoraDocument) Disasm(address uint32) *models.MipsOpcode {
 	if !bridge.MemoryIsValidAddress(address) {
 		fmt.Println("invalid address")
 		return nil

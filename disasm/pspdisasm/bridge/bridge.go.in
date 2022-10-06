@@ -12,6 +12,8 @@ import (
 	"fmt"
 	"sync"
 	"unsafe"
+
+  "github.com/firodj/ppsspp/disasm/pspdisasm/models"
 )
 
 type CSymbolMap C.BridgeSymbolMap
@@ -143,10 +145,10 @@ func MemoryIsValidAddress(address uint32) bool {
   return C.MemoryIsValidAddress(C.uint32_t(address)) == 1
 }
 
-func MIPSAnalystGetOpcodeInfo(address uint32) *MipsOpcode {
+func MIPSAnalystGetOpcodeInfo(address uint32) *models.MipsOpcode {
   opcode := C.MIPSAnalystGetOpcodeInfo(C.uint32_t(address))
 
-  return &MipsOpcode{
+  return &models.MipsOpcode{
     Address: uint32(opcode.opcodeAddress),
     Encoded: uint32(opcode.encodedOpcode),
 

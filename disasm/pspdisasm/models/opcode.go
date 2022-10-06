@@ -1,4 +1,4 @@
-package bridge
+package models
 
 type MipsOpcode struct {
 	Address            uint32
