@@ -6,9 +6,12 @@ import (
 	"github.com/firodj/ppsspp/disasm/pspdisasm/models"
 )
 
+type BBYieldFunc func(state BBAnalState)
+
 type BBAnalState struct {
 	BBAddr uint32
 	BranchAddr uint32
+	LastAddr uint32
 	Lines []models.MipsOpcode
   Count int
 }
@@ -41,15 +44,12 @@ func (bbas *BBAnalState) Append(instr *models.MipsOpcode) {
 	bbas.Lines = append(bbas.Lines, *instr)
 }
 
-func (bbas *BBAnalState) Yield(last_addr uint32) {
+func (bbas *BBAnalState) Yield(last_addr uint32, cb BBYieldFunc) {
 	if len(bbas.Lines) == 0 {
 		return
 	}
-
-	fmt.Printf("bb:0x%08x br:0x%08x last_addr:0x%08x\n", bbas.BBAddr, bbas.BranchAddr, last_addr)
-	for _, line := range bbas.Lines {
-		fmt.Printf("\t0x%08x %s\n", line.Address, line.Dizz)
-	}
+	bbas.LastAddr = last_addr
+	cb(*bbas)
 
 	bbas.Reset()
 	bbas.Count += 1

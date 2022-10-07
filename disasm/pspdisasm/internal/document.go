@@ -105,6 +105,7 @@ type SoraDocument struct {
 	yaml     SoraYaml
 	analyzed SoraAnalyzed
 	// HLEModules (yaml)
+	bbtraceparser *BBTraceParser
 
 	// MemoryDump
 	buf      unsafe.Pointer
@@ -148,7 +149,7 @@ func (doc *SoraDocument) LoadMemory(filename string) error {
 func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 	main_yaml := filepath.Join(path, "Sora.yaml")
 	main_data := filepath.Join(path, "SoraMemory.bin")
-	//bb_data   := filepath.Join(path, "SoraBBTrace.rec")
+	bb_data   := filepath.Join(path, "SoraBBTrace.rec")
 	//anal_yaml := filepath.Join(path, "SoraAnalyzed.yaml")
 
 	doc := &SoraDocument{
@@ -158,6 +159,7 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 	}
 	bridge.GlobalSetSymbolMap(doc.symmap.ptr)
 	bridge.GlobalSetGetFuncNameFunc(doc.GetHLEFuncName)
+	doc.bbtraceparser = NewBBTraceParser(doc, bb_data)
 
 	err := doc.LoadYaml(main_yaml)
 	if err != nil {
@@ -289,4 +291,8 @@ func (doc *SoraDocument) BBGet(bb_addr uint32) *SoraBasicBlock {
 	}
 
 	return nil
+}
+
+func (doc *SoraDocument) Parser() *BBTraceParser {
+	return doc.bbtraceparser
 }

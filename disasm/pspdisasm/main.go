@@ -28,9 +28,19 @@ func main() {
 
 	doc.Disasm(doc.EntryAddr)
 	idx, funStart := doc.GetFunctionByAddress(doc.EntryAddr)
-	fmt.Println(funStart.Name, funStart.Address, funStart.Size, funStart.LastAddress)
+	fmt.Println(funStart.Name, funStart.Address, funStart.Size, funStart.LastAddress())
 	anal := internal.NewFunctionAnalyzer(doc, idx)
 	anal.Process()
+
+	err = doc.Parser().Parse(
+		func (param internal.BBTraceParam) {
+
+		},
+		1000,
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	defer doc.Delete()
 }

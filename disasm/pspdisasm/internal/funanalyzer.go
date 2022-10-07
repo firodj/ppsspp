@@ -66,8 +66,8 @@ func (anal *FunctionAnalyzer) Process() {
 		if _, ok := bb_visits[cur_addr]; !ok {
 			if _, bbfun := anal.doc.GetFunctionByAddress(cur_addr); bbfun == nil {
 				fmt.Printf("WARNING:\tunknown bb and not a func: 0x08%x\n", cur_addr)
-				continue
 			}
+			continue
 		}
 
 		cur_visit := bb_visits[cur_addr]
@@ -82,11 +82,16 @@ func (anal *FunctionAnalyzer) Process() {
 	}
 
 	// TODO:
-	anal.ProcessBB(fun.Address, fun.LastAddress())
+	anal.ProcessBB(fun.Address, fun.LastAddress(), func (bbas BBAnalState) {
+		fmt.Printf("bb:0x%08x br:0x%08x last_addr:0x%08x\n", bbas.BBAddr, bbas.BranchAddr, bbas.LastAddr)
+		for _, line := range bbas.Lines {
+			fmt.Printf("\t0x%08x %s\n", line.Address, line.Dizz)
+		}
+	})
 }
 
 
-func (anal *FunctionAnalyzer) ProcessBB(start_addr uint32, last_addr uint32) int {
+func (anal *FunctionAnalyzer) ProcessBB(start_addr uint32, last_addr uint32, cb BBYieldFunc) int {
 	var bbas BBAnalState
 	bbas.Init()
 	var prevInstr *models.MipsOpcode = nil
@@ -103,7 +108,7 @@ func (anal *FunctionAnalyzer) ProcessBB(start_addr uint32, last_addr uint32) int
 
 			if !instr.HasDelaySlot {
 				fmt.Printf("WARNING:\tunhandled branch without delay shot\n")
-				bbas.Yield(addr)
+				bbas.Yield(addr, cb)
 
 				if last_addr == 0 && instr.IsConditional {
 					break
@@ -112,7 +117,7 @@ func (anal *FunctionAnalyzer) ProcessBB(start_addr uint32, last_addr uint32) int
 		}
 
 		if prevInstr != nil && prevInstr.HasDelaySlot {
-			bbas.Yield(addr)
+			bbas.Yield(addr, cb)
 
 			if last_addr == 0 && !prevInstr.IsConditional {
 				break
@@ -122,7 +127,7 @@ func (anal *FunctionAnalyzer) ProcessBB(start_addr uint32, last_addr uint32) int
 		prevInstr = instr
 	}
 
-	bbas.Yield(last_addr)
+	bbas.Yield(last_addr, cb)
 
 	return bbas.Count
 }
