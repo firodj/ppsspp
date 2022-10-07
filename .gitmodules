@@ -38,3 +38,6 @@
 	path = assets/debugger
 	url = https://github.com/unknownbrackets/ppsspp-debugger.git
 	branch = bundled
+[submodule "disasm/pspsora"]
+	path = disasm/pspsora
+	url = https://github.com/firodj/pspsora.git
