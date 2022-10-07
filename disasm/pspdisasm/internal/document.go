@@ -285,10 +285,12 @@ func (doc *SoraDocument) GetFunctionByIndex(idx int) *SoraFunction {
 	return &doc.analyzed.Functions[idx]
 }
 
-func (doc *SoraDocument) BBGet(bb_addr uint32) *SoraBasicBlock {
+func (doc *SoraDocument) GetBB(bb_addr uint32) *SoraBasicBlock {
 	if bb_addr == 0 {
 		return nil
 	}
+
+
 
 	return nil
 }

@@ -74,9 +74,17 @@ func (st *BSTStringTestSuite) TestMax() {
 }
 
 func (st *BSTStringTestSuite) TestSearch() {
-    st.Truef(st.bst.Search(1), "search 1 not working")
-    st.Truef(st.bst.Search(8), "search 8 not working")
-    st.Truef(st.bst.Search(11), "search 11 not working")
+    it := st.bst.Search(1)
+    st.False(it.End())
+    st.Equal(1, it.Key())
+
+    it = st.bst.Search(8)
+    st.False(it.End())
+    st.Equal(8, it.Key())
+
+    it = st.bst.Search(11)
+    st.False(it.End())
+    st.Equal(11, it.Key())
 }
 
 func (st *BSTStringTestSuite) TestRemove() {
@@ -85,4 +93,44 @@ func (st *BSTStringTestSuite) TestRemove() {
     min := st.bst.Min()
     st.NotNil(min, "min not working")
     st.Equalf("2", *min, "min should be 2")
+}
+
+func (st *BSTStringTestSuite) TestLowerBound() {
+    st.bst.Insert(20, "20")
+    st.bst.Remove(1)
+    st.bst.Insert(15, "15")
+
+    it := st.bst.LowerBound(1)
+    st.False(it.End())
+    st.Equal(2, it.Key())
+
+    it = it.Prev()
+    st.True(it.End())
+
+    it = it.Next()
+    st.False(it.End())
+    st.Equal(3, it.Key())
+
+    it = st.bst.LowerBound(4)
+    st.False(it.End())
+    st.Equal(4, it.Key())
+
+    it = it.Prev()
+    st.False(it.End())
+    st.Equal(3, it.Key())
+
+    it = st.bst.LowerBound(12)
+    st.False(it.End())
+    st.Equal(15, it.Key())
+
+    it = st.bst.LowerBound(19)
+    st.False(it.End())
+    st.Equal(20, it.Key())
+
+    it = it.Prev()
+    st.False(it.End())
+    st.Equal(15, it.Key())
+
+    it = st.bst.LowerBound(22)
+    st.True(it.End())
 }
