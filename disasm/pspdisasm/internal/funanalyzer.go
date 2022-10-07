@@ -6,6 +6,25 @@ import (
 	"github.com/firodj/ppsspp/disasm/pspdisasm/models"
 )
 
+// generics Queue
+type Queue[T any] struct {
+	elements []T
+}
+
+func (q *Queue[T]) Push(element T) {
+	q.elements = append(q.elements, element)
+}
+
+func (q *Queue[T]) Len() int {
+	return len(q.elements)
+}
+
+func (q *Queue[T]) Pop() T {
+	element := q.elements[0]
+	q.elements = q.elements[1:]
+	return element
+}
+
 type FunctionAnalyzer struct {
 	doc *SoraDocument
 	idx int
@@ -18,17 +37,52 @@ func NewFunctionAnalyzer(doc *SoraDocument, idx int) *FunctionAnalyzer {
 	}
 }
 
+type BBVisit struct {
+	BB      *SoraBasicBlock
+	Visited bool
+}
+
 func (anal *FunctionAnalyzer) Process() {
 	fun := anal.doc.GetFunctionByIndex(anal.idx)
 	if fun == nil {
 		fmt.Printf("ERROR:\tno func for index:%d\n", anal.idx)
 		return
 	}
-	var last_addr uint32 = 0
-	if fun.LastAddress != nil {
-		last_addr = *fun.LastAddress
+
+	bb_visits := make(map[uint32]*BBVisit)
+	for _, bb_addr := range fun.BBAddresses {
+		bb_visits[bb_addr] = &BBVisit{
+			BB: anal.doc.BBGet(bb_addr),
+			Visited: false,
+		}
 	}
-	anal.ProcessBB(fun.Address, last_addr)
+
+	var bb_queues Queue[uint32]
+	bb_queues.Push(fun.Address)
+
+	for bb_queues.Len() > 0 {
+		cur_addr := bb_queues.Pop()
+
+		if _, ok := bb_visits[cur_addr]; !ok {
+			if _, bbfun := anal.doc.GetFunctionByAddress(cur_addr); bbfun == nil {
+				fmt.Printf("WARNING:\tunknown bb and not a func: 0x08%x\n", cur_addr)
+				continue
+			}
+		}
+
+		cur_visit := bb_visits[cur_addr]
+		if cur_visit.Visited {
+			continue
+		}
+		cur_visit.Visited = true
+
+		fmt.Println("---")
+
+
+	}
+
+	// TODO:
+	anal.ProcessBB(fun.Address, fun.LastAddress())
 }
 
 

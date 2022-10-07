@@ -34,9 +34,13 @@ type PSPModule struct {
 type SoraFunction struct {
 	Name        string   `yaml:"name"`
 	Address     uint32   `yaml:"address"`
-	Size        *uint32  `yaml:"size"`
-	LastAddress *uint32  `yaml:last_address"`
+	Size        uint32   `yaml:"size"`
 	BBAddresses []uint32 `yaml:bb_addresses"`
+
+}
+
+func (fun *SoraFunction) LastAddress() uint32 {
+	return fun.Address + fun.Size - 4
 }
 
 type PSPHLEFunction struct {
@@ -65,22 +69,50 @@ type PSPMemory struct {
 	Size  int    `yaml:"size"`
 }
 
+type SoraBasicBlock struct {
+	Adress        uint32 `yaml:"address"`
+	LastAddress   uint32 `yaml:"last_address"`
+	BranchAddress uint32 `yaml:"branch_address"`
+}
+
+type SoraBBRef struct {
+	From  uint32 `yaml:"from"`
+	To    uint32 `yaml:"to"`
+	Flags uint32 `yaml:flags"`
+
+	IsDynamic  bool // immediate or by reg/mem/ptr
+	IsAdjacent bool // next/prev
+	IsLinked   bool // call/linked
+	IsVisited  bool // by bbtrace
+}
+
 type SoraYaml struct {
 	Module        PSPModule         `yaml:"module"`
 	Memory        PSPMemory         `yaml:"memory"`
 	LoadedModules []PSPLoadedModule `yaml:"loaded_modules"`
-	Functions     []SoraFunction    `yaml:"functions"`
+	SymFunctions  []SoraFunction    `yaml:"functions"`
 	HLEModules    []PSPHLEModule    `yaml:"hle_modules"`
 }
 
+// TODO: will move to other persist storage
+type SoraAnalyzed struct {
+	BasicBlocks    []SoraBasicBlock `yaml:"basic_blocks"`
+	BasicBlockRefs []SoraBBRef      `yaml:"basic_block_refs"`
+	Functions      []SoraFunction   `yaml:"functions"`
+}
+
 type SoraDocument struct {
-	yaml SoraYaml
-	buf  unsafe.Pointer
-	// HLEModules
+	yaml     SoraYaml
+	analyzed SoraAnalyzed
+	// HLEModules (yaml)
+
 	// MemoryDump
+	buf      unsafe.Pointer
+
 	// UseDef Analyzer
+
 	// SymbolMap
-	symmap *SymbolMap
+	symmap   *SymbolMap
 
 	mapAddrToFunc map[uint32]int
 	mapNameToFunc map[string][]int
@@ -141,17 +173,9 @@ func NewSoraDocument(path string, load_analyzed bool) (*SoraDocument, error) {
 		doc.symmap.AddModule(modl.Name, modl.Address, uint32(modl.Size))
 	}
 
-	for idx := range doc.yaml.Functions {
-		fun := &doc.yaml.Functions[idx]
-		if fun.LastAddress != nil {
-			fun.Size = new(uint32)
-			*fun.Size = *fun.LastAddress - fun.Address + 4
-		} else if fun.Size != nil {
-			fun.LastAddress = new(uint32)
-			*fun.LastAddress = fun.Address + *fun.Size - 4
-		}
-
-		doc.RegisterExistingFunction(idx)
+	for idx := range doc.yaml.SymFunctions {
+		fun := &doc.yaml.SymFunctions[idx]
+		doc.RegisterExistingFunction(fun)
 	}
 
 	doc.EntryAddr = doc.yaml.Module.NM.EntryAddr
@@ -164,7 +188,7 @@ func (doc *SoraDocument) GetLabelName(addr uint32) *string {
 }
 
 func (doc *SoraDocument) RegisterNameFunction(idx int) {
-	fun := &doc.yaml.Functions[idx]
+	fun := &doc.yaml.SymFunctions[idx]
 
 	if _, ok := doc.mapNameToFunc[fun.Name]; !ok {
 		doc.mapNameToFunc[fun.Name] = make([]int, 0)
@@ -179,36 +203,34 @@ func (doc *SoraDocument) RegisterNameFunction(idx int) {
 	doc.mapNameToFunc[fun.Name] = append(doc.mapNameToFunc[fun.Name], idx)
 }
 
-func (doc *SoraDocument) RegisterExistingFunction(idx int)  {
-	fun := &doc.yaml.Functions[idx]
-
-	doc.symmap.AddFunction(fun.Name, fun.Address, *fun.Size, -1)
-
-	doc.mapAddrToFunc[fun.Address] = idx
-
-	doc.RegisterNameFunction(idx)
+// RegisterExistingFunction got fun from yaml.SymFunctions and store  into analyzed.Functions
+func (doc *SoraDocument) RegisterExistingFunction(fun *SoraFunction)  {
+	doc.symmap.AddFunction(fun.Name, fun.Address, fun.Size, -1)
+	doc.CreateNewFunction(fun.Address, fun.Size)
 }
 
-func (doc *SoraDocument) CreateNewFunction(addr uint32, last_addr uint32) int {
+func (doc *SoraDocument) CreateNewFunction(addr uint32, size uint32) int {
 	if _, ok := doc.mapAddrToFunc[addr]; ok {
 		fmt.Printf("WARNING:\tduplicate address CreateNewFunction addr:0x%08x\n", addr);
 		return -1
 	}
+	name := doc.symmap.GetLabelName(addr)
+	if name == nil {
+		name = new(string)
+		*name = fmt.Sprintf("z_un_%08x", addr)
+	}
 
-	idx := len(doc.yaml.Functions)
+	idx := len(doc.analyzed.Functions)
 
-	doc.yaml.Functions = append(doc.yaml.Functions, SoraFunction{
+	doc.analyzed.Functions = append(doc.analyzed.Functions, SoraFunction{
 		Address: addr,
-		Name: fmt.Sprintf("z_un_%08x", addr),
-		LastAddress: new(uint32),
-		Size: new(uint32),
+		Name: *name,
+		Size: size,
 	})
 
-	fun := &doc.yaml.Functions[idx]
-	*fun.LastAddress = last_addr
-	*fun.Size = *fun.LastAddress - fun.Address + 4
+	fun := &doc.analyzed.Functions[idx]
 
-  doc.symmap.AddFunction(fun.Name, fun.Address, *fun.Size, -1)
+  doc.symmap.AddFunction(fun.Name, fun.Address, fun.Size, -1)
 
 	doc.mapAddrToFunc[fun.Address] = idx
 
@@ -249,14 +271,22 @@ func (doc *SoraDocument) Disasm(address uint32) *models.MipsOpcode {
 
 func (doc *SoraDocument) GetFunctionByAddress(address uint32) (int, *SoraFunction)  {
 	if idx, ok := doc.mapAddrToFunc[address]; ok {
-		return idx, &doc.yaml.Functions[idx]
+		return idx, &doc.analyzed.Functions[idx]
 	}
 	return -1, nil
 }
 
 func (doc *SoraDocument) GetFunctionByIndex(idx int) *SoraFunction {
-	if idx < 0 || idx >= len(doc.yaml.Functions) {
+	if idx < 0 || idx >= len(doc.analyzed.Functions) {
 		return nil
 	}
-	return &doc.yaml.Functions[idx]
+	return &doc.analyzed.Functions[idx]
+}
+
+func (doc *SoraDocument) BBGet(bb_addr uint32) *SoraBasicBlock {
+	if bb_addr == 0 {
+		return nil
+	}
+
+	return nil
 }
