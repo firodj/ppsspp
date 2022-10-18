@@ -14,8 +14,6 @@
 
 void GlobalSetMemoryBase(void *base, uint32_t startAddress) {
   Memory::base = (u8*)base - startAddress;
-
-  printf("set Memory::base to 0x%x with startAddress:0x%x\n", base, startAddress);
 }
 
 BridgeSymbolMap NewSymbolMap() {
@@ -51,6 +49,11 @@ void SymbolMap_AddFunction(BridgeSymbolMap sym, const char* name, uint32_t addre
 void SymbolMap_AddModule(BridgeSymbolMap sym, const char *name, uint32_t address, uint32_t size) {
   auto _sym = reinterpret_cast<SymbolMap*>(sym);
   _sym->AddModule(name, address, size);
+}
+
+int SymbolMap_SetFunctionSize(BridgeSymbolMap sym, uint32_t startAddress, uint32_t newSize) {
+   auto _sym = reinterpret_cast<SymbolMap*>(sym);
+  _sym->SetFunctionSize(startAddress, newSize);
 }
 
 void GlobalSetSymbolMap(BridgeSymbolMap sym) {

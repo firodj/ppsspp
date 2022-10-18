@@ -3086,7 +3086,7 @@ void __KernelSwitchContext(PSPThread *target, const char *reason) {
 	if (cur)  // It might just have been deleted.
 	{
 		__KernelSaveContext(&cur->context, (cur->nt.attr & PSP_THREAD_ATTR_VFPU) != 0);
-		cur->bbTrace.Flush();
+		cur->bbTrace.RecordEnd();
 
 		oldPC = currentMIPS->pc;
 		oldUID = cur->GetUID();

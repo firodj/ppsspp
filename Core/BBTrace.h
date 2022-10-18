@@ -5,10 +5,11 @@
 
 #include "Common/CommonTypes.h"
 
-#define KIND_ID 0x4449 // 49'I' 44'D'
-#define KIND_SZ 0x5A53 // 53'S' 5A'Z'
-#define KIND_START 0x00005453 // 53'S' 54'T'
-#define KIND_NAME 0x00004D4E // 4E'N', 4D'M'
+#define KIND_ID 0x4449 // 'I'49 _ 'D'44
+#define KIND_SZ 0x5A53 // 'S'53 _ 'Z'5A
+#define KIND_START 0x00005453 // 'S'53 _ 'T'54
+#define KIND_NAME 0x00004D4E // 'N'4E _ 'M'4D
+#define KIND_END 0x00004445 // 'E'45 _ 'D'44
 #define BB_LOG_SIZE 10
 #define BB_LOG_TTL 100
 
@@ -25,6 +26,7 @@ public:
 	void StartThread(u32 pc);
 	void Naming(const char *str, size_t sz);
 	void RecordPC(u32 pc);
+	void RecordEnd();
 	void Flush();
 	void SetData(void *data) { data_ = data; }
 
