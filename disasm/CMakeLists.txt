@@ -11,26 +11,6 @@ endif()
 set(DisasmSource
 	stub.cpp
 	Memory.cpp
-	Yaml.cpp
-	Yaml.hpp
-	MyArgument.cpp
-	MyArgument.hpp
-	MyInstruction.cpp
-	MyInstruction.hpp
-	MyFunction.cpp
-	MyFunction.hpp
-	BasicBlock.cpp
-	BasicBlock.hpp
-	MyDocument.cpp
-	MyDocument.hpp
-	Pseudo.cpp
-	Pseudo.hpp
-	UseDef.cpp
-	UseDef.hpp
-	BBTraceParser.cpp
-	BBTraceParser.hpp
-	FlameGraph.cpp
-	FlameGraph.hpp
 	go_bridge.cpp
 	include/go_bridge.h
 
@@ -108,9 +88,9 @@ if(APPLE AND (NOT IOS))
 		)
 endif()
 
-add_executable(disasm main.cpp)
-target_compile_features(disasm PUBLIC cxx_std_11)
-target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
+#add_executable(disasm main.cpp)
+#target_compile_features(disasm PUBLIC cxx_std_11)
+#target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
 
 # Generate cgo wrapper
 add_custom_command(TARGET disasm_combined

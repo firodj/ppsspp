@@ -13,7 +13,6 @@ To Create distributed Lib:
 $ cd build-ninja
 $ cmake -G Ninja ..
 $ cmake --build . --target disasm_combined
-$ cmake --build . --target disasm2
 ```
 
 # BBTrace
