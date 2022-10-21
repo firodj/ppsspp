@@ -52,8 +52,13 @@ void SymbolMap_AddModule(BridgeSymbolMap sym, const char *name, uint32_t address
 }
 
 int SymbolMap_SetFunctionSize(BridgeSymbolMap sym, uint32_t startAddress, uint32_t newSize) {
-   auto _sym = reinterpret_cast<SymbolMap*>(sym);
-  _sym->SetFunctionSize(startAddress, newSize);
+  auto _sym = reinterpret_cast<SymbolMap*>(sym);
+  return _sym->SetFunctionSize(startAddress, newSize);
+}
+
+int SymbolMap_RemoveFunction(BridgeSymbolMap sym, uint32_t startAddress, int removeName) {
+  auto _sym = reinterpret_cast<SymbolMap*>(sym);
+  return _sym->RemoveFunction(startAddress, removeName);
 }
 
 void GlobalSetSymbolMap(BridgeSymbolMap sym) {

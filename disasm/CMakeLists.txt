@@ -12,7 +12,7 @@ set(DisasmSource
 	stub.cpp
 	Memory.cpp
 	go_bridge.cpp
-	include/go_bridge.h
+	go_bridge.h
 
 	../Core/Debugger/SymbolMap.cpp
 	../Core/Debugger/SymbolMap.h
@@ -62,7 +62,7 @@ target_compile_definitions(disasmlib PUBLIC BUILD_DISASM)
 target_compile_features(disasmlib PUBLIC cxx_std_11)
 target_include_directories(disasmlib
 	PUBLIC ${PROJECT_SOURCE_DIR}/..
-	PUBLIC ${PROJECT_SOURCE_DIR}/include)
+)
 target_link_libraries(disasmlib PUBLIC cityhash)
 set(GOLIB $<TARGET_FILE:disasmlib>)
 
@@ -73,28 +73,27 @@ if (NOT MSVC)
 	set(DISASM_COMBINED_LIB ${CMAKE_BINARY_DIR}/libdisasm_combined.a)
 	set(GOLIB ${DISASM_COMBINED_LIB})
 
-	# TODO: libtool is bash script, it is troublesome on MSYS, may be on macos using same aproach?
-	if(APPLE AND (NOT IOS))
-		add_custom_target(disasm_combined
-			COMMAND libtool -static -o ${DISASM_COMBINED_LIB}
-				$<TARGET_FILE:disasmlib>
-				$<TARGET_FILE:cityhash>
-			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-			DEPENDS ${DISASM_DEPEND_LIBS}
-		)
-	elseif (MINGW)
-		file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/CombinedTemp)
-		add_custom_target(disasm_combined
-			COMMAND
-				${CMAKE_AR} x $<TARGET_FILE:disasmlib>
-			COMMAND
-				${CMAKE_AR} x $<TARGET_FILE:cityhash>
-			COMMAND
-				${CMAKE_AR} rv ${DISASM_COMBINED_LIB} *.obj
-			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/CombinedTemp
-			DEPENDS ${DISASM_DEPEND_LIBS}
-		)
-	endif()
+	file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/CombinedTemp)
+
+	# DEPRECATED: if(APPLE AND (NOT IOS))
+	#	add_custom_target(disasm_combined
+	#		COMMAND libtool -static -o ${DISASM_COMBINED_LIB}
+	#			$<TARGET_FILE:disasmlib>
+	#			$<TARGET_FILE:cityhash>
+	#		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+	#		DEPENDS ${DISASM_DEPEND_LIBS}
+	#	)
+		
+	add_custom_target(disasm_combined
+		COMMAND
+			${CMAKE_AR} x $<TARGET_FILE:disasmlib>
+		COMMAND
+			${CMAKE_AR} x $<TARGET_FILE:cityhash>
+		COMMAND
+			${CMAKE_AR} rv ${DISASM_COMBINED_LIB} *.o*
+		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/CombinedTemp
+		DEPENDS ${DISASM_DEPEND_LIBS}
+	)
 
 	add_library(libdisasm_combined STATIC IMPORTED GLOBAL)
 	add_dependencies(libdisasm_combined disasm_combined)
@@ -106,7 +105,7 @@ if (NOT MSVC)
 	# Generate cgo wrapper
 	add_custom_command(TARGET disasm_combined
 		POST_BUILD
-		COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include ${GOLIB}
+		COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR} ${GOLIB}
 	)
 endif(NOT MSVC)
 

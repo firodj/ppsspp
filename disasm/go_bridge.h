@@ -48,6 +48,7 @@ void DeleteSymbolMap(BridgeSymbolMap sym);
 uint32_t SymbolMap_GetFunctionSize(BridgeSymbolMap sym, uint32_t startAddress);
 uint32_t SymbolMap_GetFunctionStart(BridgeSymbolMap sym, uint32_t address);
 int SymbolMap_SetFunctionSize(BridgeSymbolMap sym, uint32_t startAddress, uint32_t newSize);
+int SymbolMap_RemoveFunction(BridgeSymbolMap sym, uint32_t startAddress, int removeName);
 const char* SymbolMap_GetLabelName(BridgeSymbolMap sym, uint32_t address);
 void SymbolMap_AddFunction(BridgeSymbolMap sym, const char* name, uint32_t address, uint32_t size, int moduleIndex);
 void SymbolMap_AddModule(BridgeSymbolMap sym, const char *name, uint32_t address, uint32_t size);
