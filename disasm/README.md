@@ -1,6 +1,6 @@
 # Disasm (Standalone)
 
-MacOS:
+## MacOS:
 
 ```
 $ cd build-xcode
@@ -8,12 +8,35 @@ $ cmake -G Xcode ..
 $ cmake --build . --target disasm && ./Debug/disasm --fn start
 ```
 
-To Create distributed Lib:
+To create distributed Lib:
 ```
 $ cd build-ninja
 $ cmake -G Ninja ..
 $ cmake --build . --target disasm_combined
 ```
+
+## Windows MSYS/UCRT64:
+
+Requirement:
+
+```
+$ pacman -S mingw-w64-ucrt-x86_64-gcc \
+    mingw-w64-ucrt-x86_64-cmake \
+    mingw-w64-ucrt-x86_64-ninja
+$ # For golang:
+$ pacman -S mingw-w64-ucrt-x86_64-go
+```
+
+```
+> GOROOT=C:\msys64\ucrt64\lib\go
+```
+
+```
+$ cd build-ucrt
+$ cmake -G Ninja ..
+$ cmake --build . --target disasm_combined
+```
+
 
 # BBTrace
 

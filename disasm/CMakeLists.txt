@@ -69,31 +69,50 @@ set(GOLIB $<TARGET_FILE:disasmlib>)
 # was: Common cityhash armips libzstd_static disasmlib
 set(DISASM_DEPEND_LIBS cityhash disasmlib)
 
-if(APPLE AND (NOT IOS))
+if (NOT MSVC)
 	set(DISASM_COMBINED_LIB ${CMAKE_BINARY_DIR}/libdisasm_combined.a)
 	set(GOLIB ${DISASM_COMBINED_LIB})
 
-	add_custom_target(disasm_combined
-	COMMAND libtool -static -o ${DISASM_COMBINED_LIB}
-		$<TARGET_FILE:disasmlib>
-		$<TARGET_FILE:cityhash>
-	WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-	DEPENDS ${DISASM_DEPEND_LIBS}
-	)
+	# TODO: libtool is bash script, it is troublesome on MSYS, may be on macos using same aproach?
+	if(APPLE AND (NOT IOS))
+		add_custom_target(disasm_combined
+			COMMAND libtool -static -o ${DISASM_COMBINED_LIB}
+				$<TARGET_FILE:disasmlib>
+				$<TARGET_FILE:cityhash>
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+			DEPENDS ${DISASM_DEPEND_LIBS}
+		)
+	elseif (MINGW)
+		file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/CombinedTemp)
+		add_custom_target(disasm_combined
+			COMMAND
+				${CMAKE_AR} x $<TARGET_FILE:disasmlib>
+			COMMAND
+				${CMAKE_AR} x $<TARGET_FILE:cityhash>
+			COMMAND
+				${CMAKE_AR} rv ${DISASM_COMBINED_LIB} *.obj
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/CombinedTemp
+			DEPENDS ${DISASM_DEPEND_LIBS}
+		)
+	endif()
+
 	add_library(libdisasm_combined STATIC IMPORTED GLOBAL)
 	add_dependencies(libdisasm_combined disasm_combined)
 	set_target_properties(libdisasm_combined
 		PROPERTIES
 		IMPORTED_LOCATION ${DISASM_COMBINED_LIB}
-		)
-endif()
+	)
 
-#add_executable(disasm main.cpp)
-#target_compile_features(disasm PUBLIC cxx_std_11)
-#target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
+	# Generate cgo wrapper
+	add_custom_command(TARGET disasm_combined
+		POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include ${GOLIB}
+	)
+endif(NOT MSVC)
 
-# Generate cgo wrapper
-add_custom_command(TARGET disasm_combined
-                   POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/BindConfig.cmake ${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include ${GOLIB}
-)
+# Deprecated: converted to golang
+#
+# add_executable(disasm main.cpp)
+# target_compile_features(disasm PUBLIC cxx_std_11)
+# target_link_libraries(disasm PUBLIC ${DISASM_DEPEND_LIBS})
+
