@@ -91,6 +91,9 @@
     <Filter Include="MIPS\fake">
       <UniqueIdentifier>{678fa299-0ff7-4983-982d-2da47b52e238}</UniqueIdentifier>
     </Filter>
+    <Filter Include="BBTrace">
+      <UniqueIdentifier>{4546ef1a-d53c-4a32-905b-67d66c0fa42b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ELF\ElfReader.cpp">
@@ -1190,6 +1193,9 @@
     <ClCompile Include="HLE\sceNp2.cpp">
       <Filter>HLE\Libraries</Filter>
     </ClCompile>
+    <ClCompile Include="BBTrace.cpp">
+      <Filter>BBTrace</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ELF\ElfReader.h">
@@ -1921,6 +1927,9 @@
     </ClInclude>
     <ClInclude Include="HLE\sceNp2.h">
       <Filter>HLE\Libraries</Filter>
+    </ClInclude>
+    <ClInclude Include="BBTrace.h">
+      <Filter>BBTrace</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
