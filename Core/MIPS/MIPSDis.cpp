@@ -134,9 +134,13 @@ namespace MIPSDis
 	void Dis_Syscall(MIPSOpcode op, char *out)
 	{
 		u32 callno = (op>>6) & 0xFFFFF; //20 bits
+#ifdef BUILD_DISASM
+		sprintf(out, "syscall\t0x%05x",callno);
+#else
 		int funcnum = callno & 0xFFF;
 		int modulenum = (callno & 0xFF000) >> 12;
 		sprintf(out, "syscall\t%s",/*PSPHLE::GetModuleName(modulenum),*/GetFuncName(modulenum, funcnum));
+#endif
 	}
 
 	void Dis_ToHiloTransfer(MIPSOpcode op, char *out)
