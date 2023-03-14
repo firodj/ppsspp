@@ -111,3 +111,7 @@ BridgeMipsOpcodeInfo MIPSAnalystGetOpcodeInfo(uint32_t address) {
 
   return ret;
 }
+
+const char * MIPSDebugInterface_GetRegName(int cat, int index) {
+  return currentDebugMIPS->GetRegName(cat, index);
+}

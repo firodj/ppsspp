@@ -56,6 +56,7 @@ void GlobalSetSymbolMap(BridgeSymbolMap sym);
 void GlobalSetGetFuncNameFunc(GetFuncNameFunc func);
 int MemoryIsValidAddress(uint32_t address);
 BridgeMipsOpcodeInfo MIPSAnalystGetOpcodeInfo(uint32_t address);
+const char* MIPSDebugInterface_GetRegName(int cat, int index);
 
 #ifdef __cplusplus
 }
