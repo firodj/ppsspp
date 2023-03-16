@@ -75,3 +75,5 @@ bool CanReplaceJalTo(u32 dest, const ReplacementTableEntry **entry, u32 *funcSiz
 // For savestates.  If you call SaveAndClearReplacements(), you must call RestoreSavedReplacements().
 std::map<u32, u32> SaveAndClearReplacements();
 void RestoreSavedReplacements(const std::map<u32, u32> &saved);
+
+void WriteReplaceInstructionByName(u32 address, const char*name);

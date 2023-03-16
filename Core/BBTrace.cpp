@@ -2,6 +2,7 @@
 #include "Common/File/Path.h"
 #include "Common/File/FileUtil.h"
 #include "Common/Log.h"
+#include "Core/Config.h"
 #include "zlib.h"
 
 #include <mutex>
@@ -94,6 +95,10 @@ void DumpBBTrace(BBTrace *bbTrace) {
 	env_p = std::getenv("HOME");
 #endif
 	Path path(env_p + std::string("/Sora/SoraBBTrace.rec"));
+
+	if (g_Config.bSoraPatch) {
+		return;
+	}
 
 	FILE *f = File::OpenCFile(path, "ab+");
 	if (!f) {

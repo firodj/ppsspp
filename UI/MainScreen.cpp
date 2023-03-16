@@ -1134,6 +1134,8 @@ void MainScreen::CreateViews() {
 	if (System_GetPropertyBool(SYSPROP_HAS_FILE_BROWSER)) {
 		rightColumnItems->Add(new Choice(mm->T("Load", "Load...")))->OnClick.Handle(this, &MainScreen::OnLoadFile);
 	}
+	bbTraceCBox_ = rightColumnItems->Add(new CheckBox(&g_Config.bSoraPatch, "Sora Patch"));
+	
 	rightColumnItems->Add(new Choice(mm->T("Game Settings", "Settings")))->OnClick.Handle(this, &MainScreen::OnGameSettings);
 	rightColumnItems->Add(new Choice(mm->T("Credits")))->OnClick.Handle(this, &MainScreen::OnCredits);
 	rightColumnItems->Add(new Choice(mm->T("www.ppsspp.org")))->OnClick.Handle(this, &MainScreen::OnPPSSPPOrg);

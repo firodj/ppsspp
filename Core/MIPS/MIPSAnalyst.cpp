@@ -38,6 +38,7 @@
 #include "Core/Debugger/SymbolMap.h"
 #include "Core/Debugger/DebugInterface.h"
 #include "Core/HLE/ReplaceTables.h"
+#include "sora/sora.h"
 
 using namespace MIPSCodeUtils;
 
@@ -1208,6 +1209,7 @@ skip:
 			}
 			if (g_Config.bFuncReplacements) {
 				ReplaceFunctions();
+				ReplaceSoraFunctions();
 			}
 		}
 	}

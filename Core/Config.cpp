@@ -1251,6 +1251,7 @@ void ConfigPrivate::SetRecentIsosThread(std::function<void()> f) {
 
 Config::Config() {
 	private_ = new ConfigPrivate();
+	bSoraPatch = false;
 }
 
 Config::~Config() {

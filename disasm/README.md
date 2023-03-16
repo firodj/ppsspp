@@ -100,3 +100,4 @@ BB C:
 03 JMP
 ```
 
+Patching will be using `ReplaceFunctions` (<- MIPSAnalyst::FinalizeScan  <- __KernelLoadELFFromPtr)

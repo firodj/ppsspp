@@ -2013,6 +2013,9 @@ add_library(${CoreLibName} ${CoreLinkType}
 	Core/Util/PPGeDraw.h
 	Core/BBTrace.cpp
 	Core/BBTrace.h
+	sora/sora.cpp
+	sora/sora.h
+	sora/entries.inc
 	${GPU_SOURCES}
 	ext/disarm.cpp
 	${CMAKE_CURRENT_BINARY_DIR}/git-version.cpp

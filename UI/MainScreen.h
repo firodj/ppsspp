@@ -136,6 +136,7 @@ protected:
 	UI::LinearLayout *upgradeBar_ = nullptr;
 	UI::TabHolder *tabHolder_ = nullptr;
 	UI::Button *fullscreenButton_ = nullptr;
+	UI::CheckBox *bbTraceCBox_ = nullptr;
 
 	Path restoreFocusGamePath_;
 	std::vector<GameBrowser *> gameBrowsers_;
