@@ -1691,7 +1691,7 @@ bool CanReplaceJalTo(u32 dest, const ReplacementTableEntry **entry, u32 *funcSiz
 void WriteReplaceInstructionByName(u32 address, const char *name) {
 	auto indexes = replacementNameLookup.find(name);
 	if (indexes == replacementNameLookup.end()) {
-		return false;
+		return;
 	}
 	for (int index: indexes->second) {
 		WriteReplaceInstruction(address, index);

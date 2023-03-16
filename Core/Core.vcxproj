@@ -509,6 +509,7 @@
     <ClCompile Include="..\ext\udis86\syn-intel.c" />
     <ClCompile Include="..\ext\udis86\syn.c" />
     <ClCompile Include="..\ext\udis86\udis86.c" />
+    <ClCompile Include="..\sora\sora.cpp" />
     <ClCompile Include="BBTrace.cpp" />
     <ClCompile Include="ControlMapper.cpp" />
     <ClCompile Include="AVIDump.cpp" />
@@ -1061,6 +1062,7 @@
     <ClInclude Include="..\ext\udis86\types.h" />
     <ClInclude Include="..\ext\udis86\udint.h" />
     <ClInclude Include="..\ext\udis86\udis86.h" />
+    <ClInclude Include="..\sora\sora.h" />
     <ClInclude Include="BBTrace.h" />
     <ClInclude Include="ControlMapper.h" />
     <ClInclude Include="AVIDump.h" />
@@ -1366,6 +1368,7 @@
     <None Include="..\ext\gason\LICENSE" />
     <None Include="..\ext\libzip\Android.mk" />
     <None Include="..\LICENSE.TXT" />
+    <None Include="..\sora\entries.inc" />
     <None Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -87,11 +87,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{999C12EA
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libzstd", "..\ext\libzstd.vcxproj", "{8BFD8150-94D5-4BF9-8A50-7BD9929A0850}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "disasm", "..\disasm\disasm.vcxproj", "{17D1136F-82E5-4BBE-BF0E-916E7495948B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{533F1D30-D04D-47CC-AD71-20F658907E36} = {533F1D30-D04D-47CC-AD71-20F658907E36}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM

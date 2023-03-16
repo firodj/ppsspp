@@ -40,7 +40,7 @@ int Replace_soranokiseki_tc_start() {
     sceKernelSetCompiledSdkVersion380_390(sdkVersion);
     
     int compilerVersion = 0x30306;
-    sceKernelSetCompilerVersion(PARAM(0));
+    sceKernelSetCompilerVersion(compilerVersion);
 
     // A0
     u32 threadNameAddr = 0x8a60000 + -0x38c8;
