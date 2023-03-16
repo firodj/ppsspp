@@ -24,8 +24,42 @@
 #include "GPU/GPU.h"
 #include "GPU/GPUInterface.h"
 #include "GPU/GPUState.h"
+#include "Core/HLE/sceKernelThread.h"
+
+int sceKernelSetCompiledSdkVersion380_390(int sdkVersion);
+int sceKernelSetCompilerVersion(int version);
 
 int Replace_soranokiseki_tc_start() {
+    u32 &sp = currentMIPS->r[MIPS_REG_SP];
+    sp = sp + -0x20;
+
+    int argSize = PARAM(0);
+    u32 argBlockPtr = PARAM(1);
+
+    int sdkVersion = 0x3080010;
+    sceKernelSetCompiledSdkVersion380_390(sdkVersion);
+    
+    int compilerVersion = 0x30306;
+    sceKernelSetCompilerVersion(PARAM(0));
+
+    // A0
+    u32 threadNameAddr = 0x8a60000 + -0x38c8;
+    const char *threadName = Memory::GetCharPointer(threadNameAddr);
+
+    u32 entry = 0x8804228; // A1
+    u32 prio  = 0x20; // A2
+    int stacksize = Memory::Read_U32(0x8a80000 + -0x5d34) << 10; // A3
+
+    u32 attr = 0x80000000; // A4/T0
+    u32 optionAddr = 0; // A5/T1
+
+    SceUID threadToStartID = sceKernelCreateThread(threadName, entry, prio, stacksize, attr, optionAddr); 
+
+    sceKernelStartThread(threadToStartID, argSize, argBlockPtr);
+
+    RETURN(0);
+    sp = sp + 0x20;
+
 	return 0;
 }
 
@@ -39,6 +73,7 @@ void ReplaceSoraFunctions() {
 
 #if 0
 void start() {
+
 start:  // 0x08804114   // visited
     sp = sp + -0x20; // addiu        sp, sp, -0x20
     v0 = 0x3080000;  // lui  v0, 0x308
@@ -52,12 +87,12 @@ start:  // 0x08804114   // visited
     s0 = 0x00000;    // lui  s0, 0x0
     (u32)[sp + 0x10] = ra;   // sw   ra, 0x10(sp)
     s1 = s0;
-    v0 = zz_sceKernelSetCompiledSdkVersion380_390(...)      /* { ra = 0x08804148; goto zz_sceKernelSetCompiledSdkVersion380_390; } */       // jal  ->$08a38a70
+    v0 = zz_sceKernelSetCompiledSdkVersion380_390(a0)      /* { ra = 0x08804148; goto zz_sceKernelSetCompiledSdkVersion380_390; } */       // jal  ->$08a38a70
         // addiu        s1, s0, 0x0
 start__0x34:    // 0x08804148   // visited
     v0 = 0x30000    // lui  v0, 0x3
     a0 = v0 | 0x306;
-    v0 = zz_sceKernelSetCompilerVersion(...)        /* { ra = 0x08804154; goto zz_sceKernelSetCompilerVersion; } */ // jal  ->$08a38a88
+    v0 = zz_sceKernelSetCompilerVersion(a0)        /* { ra = 0x08804154; goto zz_sceKernelSetCompilerVersion; } */ // jal  ->$08a38a88
         // ori  a0, v0, 0x306
 start__0x40:    // 0x08804154   // visited
     t1 = 0x00000;
@@ -97,13 +132,13 @@ start__0xc8:    // 0x088041dc   // visited
     s1 = 0x8800000  // lui  s1, 0x880
     a1 = s1 + 0x4228        // addiu        a1, s1, 0x4228
     t1 = 0x0;
-    v0 = zz_sceKernelCreateThread(...)      /* { ra = 0x088041ec; goto zz_sceKernelCreateThread; } */       // jal  ->$08a38b28
+    v0 = zz_sceKernelCreateThread(a0, a1, a2, a3, t0, t1)      /* { ra = 0x088041ec; goto zz_sceKernelCreateThread; } */       // jal  ->$08a38b28
         // li   t1, 0
 start__0xd8:    // 0x088041ec   // visited
     a0 = v0 // move a0, v0
     a1 = s3 // move a1, s3
     a2 = s2;
-    v0 = zz_sceKernelStartThread(...)       /* { ra = 0x088041fc; goto zz_sceKernelStartThread; } */        // jal  ->$08a38ac8
+    v0 = zz_sceKernelStartThread(a0, a1, a2)       /* { ra = 0x088041fc; goto zz_sceKernelStartThread; } */        // jal  ->$08a38ac8
         // move a2, s2
 start__0xe8:    // 0x088041fc   // visited
     ra = (u32)[sp + 0x10]   // lw   ra, 0x10(sp)
