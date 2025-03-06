@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(PPSSPP)
 enable_testing()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 #This is supposed to work but doesn't!
 if(NOT ANDROID)
@@ -282,12 +283,23 @@ if(USING_EGL)
 endif()
 
 if(NOT LIBRETRO AND NOT IOS AND NOT MACOSX)
-	find_package(SDL2)
-	find_package(SDL2_ttf)
-	find_package(Fontconfig)
+	# Linux: here
+	if (USE_SYSTEM_LIBSDL2)
+		find_package(SDL2)
+		find_package(SDL2_ttf)
+	else()
+		set(SDL_TEST OFF)
+		set(SDL2_DISABLE_SDL2MAIN ON)
+		add_subdirectory(SDL2)
+		add_subdirectory(SDL2_ttf)
+		file(COPY "${SDL2_ttf_SOURCE_DIR}/SDL_ttf.h"
+			DESTINATION "${SDL2_BINARY_DIR}/include/SDL2/")
+	endif()
 
+	find_package(Fontconfig)
+	
 	# TODO: this can be removed once CI supports newer SDL2_ttf
-	if (NOT SDL2_ttf_FOUND)
+	if (NOT SDL2_ttf_FOUND AND NOT TARGET SDL2_ttf)
 		find_package(PkgConfig)
 		if(PkgConfig_FOUND)
 			pkg_check_modules(SDL2_ttf_PKGCONFIG IMPORTED_TARGET SDL2_ttf)
@@ -1436,6 +1448,7 @@ else()
 		)
 	endif()
 	if(SDL2_ttf_FOUND OR
+		TARGET SDL2_ttf OR
 		(SDL2_ttf_PKGCONFIG_FOUND AND
 		 SDL2_ttf_PKGCONFIG_VERSION VERSION_GREATER_EQUAL "2.0.18"))
 		add_definitions(-DUSE_SDL2_TTF)
@@ -1450,7 +1463,10 @@ else()
 		set(nativeExtraLibs ${nativeExtraLibs} SDL2_ttf::SDL2_ttf)
 	elseif(SDL2_ttf_PKGCONFIG_FOUND)
 		set(nativeExtraLibs ${nativeExtraLibs} PkgConfig::SDL2_ttf_PKGCONFIG)
+	elseif(TARGET SDL2_ttf)
+		set(nativeExtraLibs ${nativeExtraLibs} SDL2_ttf)
 	endif()
+	
 	if(APPLE)
 		set(nativeExtra ${nativeExtra}
 		SDL/SDLMain.h
@@ -1623,6 +1639,7 @@ if(TARGET Ext::GLEW)
 	target_link_libraries(native Ext::GLEW)
 endif()
 
+target_link_libraries(Common ${nativeExtraLibs})
 if(ANDROID)
 	target_link_libraries(native log EGL OpenSLES)
 elseif(WIN32)

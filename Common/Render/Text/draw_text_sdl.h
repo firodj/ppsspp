@@ -10,7 +10,8 @@
 #endif
 
 // SDL2_ttf's TTF_Font is a typedef of _TTF_Font.
-struct _TTF_Font;
+// changes on Dec 2024
+struct TTF_Font;
 
 class TextDrawerSDL : public TextDrawer {
 public:
@@ -32,9 +33,13 @@ private:
 	uint32_t CheckMissingGlyph(std::string_view text);
 	int FindFallbackFonts(uint32_t missingGlyph, int ptSize);
 
-	std::map<uint32_t, _TTF_Font *> fontMap_;
+	uint32_t fontHash_;
+	std::map<uint32_t, TTF_Font *> fontMap_;
 
-	std::vector<_TTF_Font *> fallbackFonts_;
+	std::map<CacheKey, std::unique_ptr<TextStringEntry>> cache_;
+	std::map<CacheKey, std::unique_ptr<TextMeasureEntry>> sizeCache_;
+
+	std::vector<TTF_Font *> fallbackFonts_;
 	std::vector<std::pair<std::string, int>> fallbackFontPaths_; // path and font face index
 
 	std::map<int, int> glyphFallbackFontIndex_;

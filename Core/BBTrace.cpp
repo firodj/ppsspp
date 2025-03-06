@@ -6,6 +6,7 @@
 #include "zlib.h"
 
 #include <mutex>
+#include <cstring>
 
 static int BBTrace_ID = 0;
 std::string messages[BB_LOG_SIZE];
