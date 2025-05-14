@@ -163,6 +163,9 @@
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(VC_LibraryPath_ARM);$(WindowsSdk_LibraryPath_ARM);</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
