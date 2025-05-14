@@ -229,6 +229,9 @@
     <IncludePath>..\dx9sdk\Include;$(VC_IncludePath);$(WindowsSdk_IncludePath);</IncludePath>
     <LibraryPath>..\dx9sdk\Lib\x86;$(VC_LibraryPath_x86);$(WindowsSdk_LibraryPath_x86);</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>_CRTDBG_MAP_ALLOC;USING_WIN_UI;GLEW_STATIC;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_ARCH_32=1;_WINDOWS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
